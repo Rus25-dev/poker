@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs><radialGradient id="g" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#1f8a5a"/><stop offset="1" stop-color="#0a3322"/></radialGradient></defs>
+  <rect width="512" height="512" rx="110" fill="url(#g)"/>
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#e8b64c" stroke-width="14" stroke-dasharray="40 26"/>
+  <g transform="translate(150 140) rotate(-12)"><rect width="150" height="210" rx="18" fill="#fff"/><text x="22" y="62" font-family="Georgia,serif" font-size="58" font-weight="700" fill="#111">A</text><text x="60" y="170" font-family="Georgia,serif" font-size="96" fill="#111">♠</text></g>
+  <g transform="translate(222 150) rotate(12)"><rect width="150" height="210" rx="18" fill="#fff" stroke="#ddd" stroke-width="2"/><text x="22" y="62" font-family="Georgia,serif" font-size="58" font-weight="700" fill="#d8342c">A</text><text x="58" y="170" font-family="Georgia,serif" font-size="96" fill="#d8342c">♥</text></g>
+</svg>

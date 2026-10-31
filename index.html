@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b2a1f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Покер">
+<title>Покер с друзьями</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== Лобби ===== -->
+  <section id="lobby" class="screen">
+    <div class="logo">
+      <div class="logo-suits"><span>♠</span><span class="r">♥</span><span>♣</span><span class="r">♦</span></div>
+      <h1>Покер с друзьями</h1>
+      <p class="sub">Техасский холдем · онлайн с телефонов</p>
+    </div>
+
+    <div id="restoreBox" class="card-box hidden">
+      <div>Есть незавершённый стол <b id="restoreCode"></b></div>
+      <div class="row">
+        <button class="btn gold" id="btnRestore">Восстановить</button>
+        <button class="btn ghost" id="btnDropRestore">Забыть</button>
+      </div>
+    </div>
+
+    <div class="card-box">
+      <label class="lbl" for="inName">Ваше имя</label>
+      <input id="inName" maxlength="16" placeholder="Например, Рус" autocomplete="nickname">
+    </div>
+
+    <div class="card-box">
+      <button class="btn gold big" id="btnCreate">Создать стол</button>
+      <div class="or">или войти к другу</div>
+      <div class="row">
+        <input id="inCode" maxlength="5" placeholder="КОД" autocapitalize="characters" class="code-in">
+        <button class="btn green" id="btnJoin">Войти</button>
+      </div>
+    </div>
+
+    <div class="row wrap">
+      <button class="btn ghost" id="btnTrain">🤖 Тренировка с ботами</button>
+      <button class="btn ghost" id="btnStatsLobby">📊 Рейтинг</button>
+      <button class="btn ghost" id="btnRulesLobby">🃏 Комбинации</button>
+    </div>
+
+    <p id="installHint" class="hint hidden">Совет: добавьте на главный экран — «Поделиться → На экран „Домой“» (iPhone) или меню ⋮ → «Установить приложение» (Android).</p>
+    <button class="btn ghost hidden" id="btnInstall">📲 Установить приложение</button>
+  </section>
+
+  <!-- ===== Игра ===== -->
+  <section id="game" class="screen hidden">
+    <header class="topbar">
+      <button class="chip-btn" id="btnCode" title="Поделиться"><span class="dot" id="netDot"></span><span id="roomCode">—</span></button>
+      <div class="blinds" id="blindsInfo">—</div>
+      <button class="icon-btn" id="btnMenu" aria-label="Меню">☰</button>
+    </header>
+
+    <div id="tableWrap">
+      <div id="felt">
+        <div class="felt-inner">
+          <div id="centerMsg"></div>
+          <div id="board"></div>
+          <div id="potInfo"></div>
+        </div>
+      </div>
+      <div id="seats"></div>
+      <div id="floaters"></div>
+    </div>
+
+    <div id="hud">
+      <div id="myArea">
+        <div id="myCards"></div>
+        <div id="hints"></div>
+      </div>
+      <div id="actions"></div>
+    </div>
+
+    <nav class="bottombar">
+      <button class="nav-btn" id="btnChat">💬 Чат<span class="badge hidden" id="chatBadge">0</span></button>
+      <div class="quick-emoji" id="quickEmoji"></div>
+      <button class="nav-btn" id="btnLog">📜</button>
+    </nav>
+  </section>
+
+  <!-- ===== Окна ===== -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-card">
+      <button class="modal-x" id="modalClose" aria-label="Закрыть">✕</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <aside id="drawer" class="drawer hidden">
+    <div class="drawer-head"><b id="drawerTitle">Чат</b><button class="icon-btn" id="drawerClose">✕</button></div>
+    <div id="chatList" class="drawer-list"></div>
+    <div id="logList" class="drawer-list hidden"></div>
+    <div class="emoji-row" id="emojiRow"></div>
+    <form id="chatForm" class="chat-form">
+      <input id="chatIn" maxlength="200" placeholder="Сообщение…" autocomplete="off">
+      <button class="btn green" type="submit">➤</button>
+    </form>
+  </aside>
+
+  <div id="toast" class="toast hidden"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
