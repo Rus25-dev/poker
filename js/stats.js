@@ -10,7 +10,7 @@ function save(db) { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch
 function rec(db, name, bot) {
   if (!db.players[name]) db.players[name] = {
     name, bot: !!bot, hands: 0, vpip: 0, pfr: 0, won: 0, showdowns: 0, sdWon: 0,
-    net: 0, biggestPot: 0, tours: 0, tourWins: 0, top3: 0, rating: 1500, lastSeen: 0
+    net: 0, biggestPot: 0, agg: 0, calls: 0, tours: 0, tourWins: 0, top3: 0, rating: 1500, lastSeen: 0
   };
   return db.players[name];
 }
@@ -30,6 +30,8 @@ export function recordHand(result) {
       r.biggestPot = Math.max(r.biggestPot, result.pot);
     }
     r.net += p.net;
+    r.agg = (r.agg || 0) + (p.aggN || 0);
+    r.calls = (r.calls || 0) + (p.callN || 0);
   }
   save(db);
 }
@@ -67,20 +69,22 @@ export function getStats() {
     pfrPct: r.hands ? Math.round(100 * r.pfr / r.hands) : 0,
     winPct: r.hands ? Math.round(100 * r.won / r.hands) : 0,
     sdPct: r.showdowns ? Math.round(100 * r.sdWon / r.showdowns) : 0,
+    af: r.calls ? Math.round(10 * (r.agg || 0) / r.calls) / 10 : (r.agg ? r.agg : 0),
     style: playStyle(r)
   }));
   list.sort((a, b) => b.rating - a.rating || b.net - a.net);
   return { players: list, tournaments: db.tournaments };
 }
 
+// ключ стиля игры (переводится в интерфейсе)
 function playStyle(r) {
-  if (r.hands < 20) return 'мало данных';
+  if (r.hands < 20) return 'style_few';
   const v = r.vpip / r.hands, p = r.pfr / r.hands;
   const loose = v > 0.32, aggr = p > v * 0.55;
-  if (!loose && aggr) return 'тайт-агрессивный';
-  if (!loose && !aggr) return 'тайт-пассивный';
-  if (loose && aggr) return 'луз-агрессивный';
-  return 'луз-пассивный';
+  if (!loose && aggr) return 'style_tag';
+  if (!loose && !aggr) return 'style_tp';
+  if (loose && aggr) return 'style_lag';
+  return 'style_lp';
 }
 
 export function resetStats() { save({ players: {}, tournaments: [] }); }

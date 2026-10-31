@@ -135,3 +135,65 @@ export function bestFive(cards) {
     }
   return cards.slice(0, 5);
 }
+
+// Структурное описание руки (для перевода на разные языки)
+export function handDesc(score) {
+  const k = [];
+  let s = score;
+  for (let i = 0; i < 5; i++) { k.unshift(s % 16); s = Math.floor(s / 16); }
+  const cat = categoryOf(score);
+  return { cat: cat === 8 && k[0] === 12 ? 9 : cat, k };
+}
+
+// Омаха: ровно 2 карты с руки + 3 со стола
+export function evaluateOmaha(hole, board) {
+  let best = -1;
+  const n = hole.length, m = board.length;
+  for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++)
+    for (let c = 0; c < m; c++) for (let d = c + 1; d < m; d++) for (let e = d + 1; e < m; e++) {
+      const s = evaluate([hole[a], hole[b], board[c], board[d], board[e]]);
+      if (s > best) best = s;
+    }
+  return best;
+}
+
+export function evalHand(hole, board, variant = 'holdem') {
+  if (variant === 'omaha' && board.length >= 3) return evaluateOmaha(hole, board);
+  return evaluate([...hole, ...board]);
+}
+
+export function bestFiveVariant(hole, board, variant = 'holdem') {
+  if (variant !== 'omaha') return bestFive([...hole, ...board]);
+  const target = evaluateOmaha(hole, board);
+  for (let a = 0; a < hole.length; a++) for (let b = a + 1; b < hole.length; b++)
+    for (let c = 0; c < board.length; c++) for (let d = c + 1; d < board.length; d++) for (let e = d + 1; e < board.length; e++) {
+      const f = [hole[a], hole[b], board[c], board[d], board[e]];
+      if (evaluate(f) === target) return f;
+    }
+  return [];
+}
+
+// Детерминированная тасовка по 32-байтному сиду (для проверяемой честности)
+export async function sha256Hex(str) {
+  const buf = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+export async function fairDeck(seedMaterial) {
+  // поток случайных чисел: SHA-256(seed:i), по 8 чисел uint32 из каждого блока
+  const nums = [];
+  for (let i = 0; nums.length < 60; i++) {
+    const h = await sha256Hex(seedMaterial + ':' + i);
+    for (let j = 0; j < 64; j += 8) nums.push(parseInt(h.slice(j, j + 8), 16));
+  }
+  const deck = newDeck();
+  let q = 0;
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = nums[q++] % (i + 1);
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+export function randomHex(bytes = 16) {
+  const b = new Uint8Array(bytes); globalThis.crypto.getRandomValues(b);
+  return [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+}

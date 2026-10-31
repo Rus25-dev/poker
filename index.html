@@ -14,79 +14,91 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body data-felt="green" data-back="red">
 <div id="app">
 
   <!-- ===== Лобби ===== -->
   <section id="lobby" class="screen">
+    <div class="lang-switch" id="langSwitch">
+      <button data-lang="ru">RU</button><button data-lang="kk">KZ</button><button data-lang="en">EN</button>
+    </div>
     <div class="logo">
       <div class="logo-suits"><span>♠</span><span class="r">♥</span><span>♣</span><span class="r">♦</span></div>
-      <h1>Покер с друзьями</h1>
-      <p class="sub">Техасский холдем · онлайн с телефонов</p>
+      <h1 data-i18n="title">Покер с друзьями</h1>
+      <p class="sub" data-i18n="subtitle"></p>
     </div>
 
     <div id="restoreBox" class="card-box hidden">
-      <div>Есть незавершённый стол <b id="restoreCode"></b></div>
+      <div><span data-i18n="restore_found"></span> <b id="restoreCode"></b></div>
       <div class="row">
-        <button class="btn gold" id="btnRestore">Восстановить</button>
-        <button class="btn ghost" id="btnDropRestore">Забыть</button>
+        <button class="btn gold" id="btnRestore" data-i18n="restore"></button>
+        <button class="btn ghost" id="btnDropRestore" data-i18n="forget"></button>
       </div>
     </div>
 
     <div class="card-box">
-      <label class="lbl" for="inName">Ваше имя</label>
-      <input id="inName" maxlength="16" placeholder="Например, Рус" autocomplete="nickname">
+      <label class="lbl" for="inName" data-i18n="your_name"></label>
+      <div class="row name-row">
+        <button class="ava-pick" id="btnAvatarLobby" aria-label="avatar"></button>
+        <input id="inName" maxlength="16" data-i18n-ph="name_ph" autocomplete="nickname">
+      </div>
     </div>
 
     <div class="card-box">
-      <button class="btn gold big" id="btnCreate">Создать стол</button>
-      <div class="or">или войти к другу</div>
+      <button class="btn gold big" id="btnCreate" data-i18n="create_table"></button>
+      <div class="or" data-i18n="or_join"></div>
       <div class="row">
-        <input id="inCode" maxlength="5" placeholder="КОД" autocapitalize="characters" class="code-in">
-        <button class="btn green" id="btnJoin">Войти</button>
+        <input id="inCode" maxlength="5" data-i18n-ph="code_ph" autocapitalize="characters" class="code-in">
+        <button class="btn green" id="btnJoin" data-i18n="join"></button>
       </div>
     </div>
 
     <div class="row wrap">
-      <button class="btn ghost" id="btnTrain">🤖 Тренировка с ботами</button>
-      <button class="btn ghost" id="btnStatsLobby">📊 Рейтинг</button>
-      <button class="btn ghost" id="btnRulesLobby">🃏 Комбинации</button>
+      <button class="btn ghost" id="btnTrain" data-i18n="train"></button>
+      <button class="btn ghost" id="btnStatsLobby" data-i18n="rating"></button>
+      <button class="btn ghost" id="btnHistLobby" data-i18n="history_btn"></button>
+      <button class="btn ghost" id="btnRulesLobby" data-i18n="combos"></button>
+      <button class="btn ghost" id="btnSettingsLobby" data-i18n="settings_btn"></button>
     </div>
 
-    <p id="installHint" class="hint hidden">Совет: добавьте на главный экран — «Поделиться → На экран „Домой“» (iPhone) или меню ⋮ → «Установить приложение» (Android).</p>
-    <button class="btn ghost hidden" id="btnInstall">📲 Установить приложение</button>
+    <p id="installHint" class="hint hidden" data-i18n="install_hint"></p>
+    <button class="btn ghost hidden" id="btnInstall" data-i18n="install"></button>
   </section>
 
   <!-- ===== Игра ===== -->
   <section id="game" class="screen hidden">
     <header class="topbar">
-      <button class="chip-btn" id="btnCode" title="Поделиться"><span class="dot" id="netDot"></span><span id="roomCode">—</span></button>
+      <button class="chip-btn" id="btnCode"><span class="dot" id="netDot"></span><span id="roomCode">—</span></button>
       <div class="blinds" id="blindsInfo">—</div>
-      <button class="icon-btn" id="btnMenu" aria-label="Меню">☰</button>
+      <button class="icon-btn" id="btnFair" title="fair">🔒</button>
+      <button class="icon-btn" id="btnMenu" aria-label="menu">☰</button>
     </header>
 
-    <div id="tableWrap">
-      <div id="felt">
-        <div class="felt-inner">
-          <div id="centerMsg"></div>
-          <div id="board"></div>
-          <div id="potInfo"></div>
+    <div class="game-main">
+      <div id="tableWrap">
+        <div id="felt">
+          <div class="felt-inner">
+            <div id="centerMsg"></div>
+            <div id="board"></div>
+            <div id="potInfo"></div>
+          </div>
         </div>
+        <div id="seats"></div>
+        <div id="floaters"></div>
       </div>
-      <div id="seats"></div>
-      <div id="floaters"></div>
-    </div>
 
-    <div id="hud">
-      <div id="myArea">
-        <div id="myCards"></div>
-        <div id="hints"></div>
+      <div id="hud">
+        <div id="myArea">
+          <div id="myCards"></div>
+          <div id="hints"></div>
+        </div>
+        <div id="coachBox" class="hidden"></div>
+        <div id="actions"></div>
       </div>
-      <div id="actions"></div>
     </div>
 
     <nav class="bottombar">
-      <button class="nav-btn" id="btnChat">💬 Чат<span class="badge hidden" id="chatBadge">0</span></button>
+      <button class="nav-btn" id="btnChat"><span data-i18n="chat"></span><span class="badge hidden" id="chatBadge">0</span></button>
       <div class="quick-emoji" id="quickEmoji"></div>
       <button class="nav-btn" id="btnLog">📜</button>
     </nav>
@@ -95,22 +107,23 @@
   <!-- ===== Окна ===== -->
   <div id="modal" class="modal hidden">
     <div class="modal-card">
-      <button class="modal-x" id="modalClose" aria-label="Закрыть">✕</button>
+      <button class="modal-x" id="modalClose" aria-label="close">✕</button>
       <div id="modalBody"></div>
     </div>
   </div>
 
   <aside id="drawer" class="drawer hidden">
-    <div class="drawer-head"><b id="drawerTitle">Чат</b><button class="icon-btn" id="drawerClose">✕</button></div>
+    <div class="drawer-head"><b id="drawerTitle"></b><button class="icon-btn" id="drawerClose">✕</button></div>
     <div id="chatList" class="drawer-list"></div>
     <div id="logList" class="drawer-list hidden"></div>
     <div class="emoji-row" id="emojiRow"></div>
     <form id="chatForm" class="chat-form">
-      <input id="chatIn" maxlength="200" placeholder="Сообщение…" autocomplete="off">
+      <input id="chatIn" maxlength="200" data-i18n-ph="msg_ph" autocomplete="off">
       <button class="btn green" type="submit">➤</button>
     </form>
   </aside>
 
+  <div id="fx"></div>
   <div id="toast" class="toast hidden"></div>
 </div>
 

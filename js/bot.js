@@ -1,5 +1,13 @@
 // Боты: решение по эквити (Монте-Карло), шансам банка и характеру
-import { equity, chenScore } from './equity.js';
+import { equity, chenScore as chen2, omahaScore } from './equity.js';
+
+// оценка стартовой руки с учётом разновидности (ананас — лучшая пара из трёх, омаха — своя шкала)
+let VARIANT = 'holdem';
+function chenScore(hole) {
+  if (VARIANT === 'omaha') return omahaScore(hole) / 2;
+  if (hole.length === 3) return Math.max(...[0, 1, 2].map(i => chen2(hole.filter((_, j) => j !== i))));
+  return chen2(hole);
+}
 
 export const BOT_STYLES = {
   tight:  { name: 'Осторожный',     aggr: 0.25, loose: -0.06, bluff: 0.03 },
@@ -19,8 +27,10 @@ export function botDecide(view, meId, styleKey = 'normal', rnd = Math.random) {
   const pot = view.pot;
   const toCall = L.toCall;
 
+  VARIANT = view.settings.variant || 'holdem';
   if (view.board.length === 0) return preflop(view, me, L, st, styleKey, opp, rnd);
-  let eq = equity(me.hole, view.board, opp, 600, rnd).equity;
+  const v = VARIANT === 'pineapple' ? 'holdem' : VARIANT;
+  let eq = equity(me.hole, view.board, opp, v === 'omaha' ? 300 : 600, rnd, { variant: v }).equity;
   eq += st.loose + (rnd() - 0.5) * 0.06;
 
   const fair = 1 / (opp + 1);
