@@ -537,11 +537,11 @@ function render() {
   // верхняя панель
   const tour = v.settings.mode === 'tournament';
   const vname = v.settings.variant !== 'holdem' ? ` · ${t('v_' + v.settings.variant).split(' ')[0]}` : '';
-  $('#blindsInfo').innerHTML = `<b>${fmt(v.blinds[0])} / ${fmt(v.blinds[1])}</b>${v.ante ? ` <small>${t('ante_info', { a: fmt(v.ante) })}</small>` : ''}<br><span id="lvlTimer">${tour ? t('lvl', { n: v.level }) : t('cash')}${vname}</span>`;
+  setHTML($('#blindsInfo'), `<b>${fmt(v.blinds[0])} / ${fmt(v.blinds[1])}</b>${v.ante ? ` <small>${t('ante_info', { a: fmt(v.ante) })}</small>` : ''}<br><span id="lvlTimer">${tour ? t('lvl', { n: v.level }) : t('cash')}${vname}</span>`);
   $('#btnFair').classList.toggle('hidden', !!(st.ctl && st.ctl.offline));
 
   // места
-  let html = '';
+  const items = [];
   const allinEq = computeAllinEq(v);
   const dealt = v.seats.filter(Boolean).map(s => s.cardCount).reduce((a, b) => Math.max(a, b), 0);
   for (let i = 0; i < v.seats.length; i++) {
@@ -575,12 +575,12 @@ function render() {
       else if (s) hud = `<div class="hudl">${t('hud_few', { n: s.hands })}</div>`;
     }
     const isTop = !desk && y < 20;
-    html += `<div class="${cls}${isTop ? ' top' : ''}" data-id="${esc(p.id)}" data-seat="${i}" style="left:${x}%;top:${isTop ? '20px' : y + '%'}">
+    items.push({ k: 's' + i, h: `<div class="${cls}${isTop ? ' top' : ''}" data-id="${esc(p.id)}" data-seat="${i}" style="left:${x}%;top:${isTop ? '20px' : y + '%'}">
       ${p.lastAction && v.phase !== 'idle' ? `<div class="act ${actCls}">${esc(actionText(p.lastAction))}</div>` : ''}
       <div class="ava">${avatarHTML(st.avatars[p.id], p.name)}${timer}</div>${eqBadge}
       <div class="plate"><div class="nm">${esc(p.name)}</div><div class="ch">${winAmt ? '+' + fmt(winAmt.amount) : chipsTxt}</div>${hud}</div>
       <div class="cards">${cards}</div>${shownHand}
-    </div>`;
+    </div>` });
     if (p.bet > 0) {
       let bx, by;
       if (desk) {
@@ -592,7 +592,7 @@ function render() {
         const M = new Map([[P.t, [72, 20]], [P.tl, [27, 34]], [P.tr, [73, 34]], [P.l, [14, 56]], [P.r, [86, 56]], [P.bl, [26, 68]], [P.br, [74, 68]]]);
         [bx, by] = M.get(pos) || [x + (50 - x) * 0.42, y + (50 - y) * 0.42];
       }
-      html += `<div class="bet" data-seat="${i}" style="left:${bx}%;top:${by}%"><span class="chipico"></span>${fmt(p.bet)}</div>`;
+      items.push({ k: 'b' + i, h: `<div class="bet" data-seat="${i}" style="left:${bx}%;top:${by}%"><span class="chipico"></span>${fmt(p.bet)}</div>` });
     }
     if (i === v.dealer && v.handNo) {
       const isBottom = (posMap[i] || P.t) === P.me;
@@ -602,12 +602,11 @@ function render() {
         else { const side = Math.abs(50 - x) > 15; dx = x + (50 - x) * 0.3 + (side ? 0 : 8); dy = y + (50 - y) * 0.3 + (side ? (y < 50 ? 10 : -9) : 0); }
       } else if (isBottom) { dx = 71; dy = 79; }
       else { dx = x + (50 - x) * 0.3; dy = y + (50 - y) * 0.3 + (y < 30 ? 6 : 0); }
-      html += `<div class="dealer-btn${isMe ? ' me-d' : ''}" style="left:${dx}%;top:${dy}%">D</div>`;
+      items.push({ k: 'd', h: `<div class="dealer-btn${isMe ? ' me-d' : ''}" style="left:${dx}%;top:${dy}%">D</div>` });
     }
   }
   // на низком экране прячем рубашки соперников и уменьшаем места, чтобы ничего не наезжало на стол
-  updateCompact();
-  $('#seats').innerHTML = html;
+  patchChildren($('#seats'), items);
   bindSeatTaps();
 
   // доска: новые карты переворачиваются по очереди
@@ -622,9 +621,9 @@ function render() {
   }
   if (v.board.length > st.boardShown) { const n = v.board.length - st.boardShown; for (let k = 0; k < n; k++) SND.flip && setTimeout(() => SND.flip(), k * 130); }
   st.boardShown = v.board.length;
-  $('#board').innerHTML = bh;
+  setHTML($('#board'), bh);
   $('#board').classList.toggle('omaha', v.settings.variant === 'omaha');
-  $('#potInfo').innerHTML = v.handNo && v.phase !== 'idle' ? t('pot', { a: fmt(lr ? lr.pot : v.pot) }) : '';
+  setHTML($('#potInfo'), v.handNo && v.phase !== 'idle' ? t('pot', { a: fmt(lr ? lr.pot : v.pot) }) : '');
 
   // центр
   let msg = '';
@@ -635,17 +634,41 @@ function render() {
     msg = st.ctl?.isHost() ? `${t('c_players', { n: cnt })} ${v.handNo ? t('c_waiting') : t('c_invite')}` : t('c_wait_deal');
   } else if (v.phase === 'runout') msg = t('c_allin');
   else if (v.phase === 'discard') msg = t('c_discard');
-  $('#centerMsg').innerHTML = msg;
+  setHTML($('#centerMsg'), msg);
 
   renderMine(v, me);
   renderActions(v, me);
   placeHeroBits();
+  tickTimers();
+}
+
+// обновить содержимое только если разметка изменилась (без пересоздания элементов и мигания)
+function setHTML(el, html) {
+  if (!el || el._h === html) return false;
+  el.innerHTML = html; el._h = html;
+  return true;
+}
+// обновить детей контейнера по ключам: неизменившиеся элементы остаются на месте
+function patchChildren(container, items) {
+  const existing = new Map();
+  for (const el of [...container.children]) existing.set(el.dataset.k, el);
+  const keep = new Set();
+  for (const it of items) {
+    keep.add(it.k);
+    const old = existing.get(it.k);
+    if (old && old._h === it.h) continue;
+    const tpl = document.createElement('template');
+    tpl.innerHTML = it.h.trim();
+    const el = tpl.content.firstElementChild;
+    el.dataset.k = it.k; el._h = it.h;
+    if (old) old.replaceWith(el); else container.appendChild(el);
+  }
+  for (const [k, el] of existing) if (!keep.has(k)) el.remove();
 }
 
 // низкий стол на телефоне: прячем рубашки соперников и уменьшаем места
 function updateCompact() {
-  const w = $('#tableWrap');
-  w.classList.toggle('compact', !isDesk() && w.clientHeight < 380);
+  $('#tableWrap').classList.toggle('compact', !isDesk() && window.innerHeight < 720);
 }
 // на телефоне моя ставка — над моими картами, кнопка дилера — справа от них (по фактическому размеру)
 function placeHeroBits() {
@@ -701,7 +724,7 @@ function renderMine(v, me) {
   const myAct = me.lastAction && v.phase !== 'idle' ? `<span class="my-act">${esc(actionText(me.lastAction))}</span>` : '';
   box.innerHTML = `<div class="pair n${n}">${cards}</div><div class="me-info"><span class="me-ava">${avatarHTML(st.prefs.avatar, me.name)}</span><b>${fmt(me.chips)}</b>${pos}${myAct}</div>`;
   const heroSlot = $('#seats .seat.me .cards');
-  if (heroSlot) heroSlot.innerHTML = `<div class="pair n${n}">${cards}</div>`;
+  if (heroSlot) setHTML(heroSlot, `<div class="pair n${n}">${cards}</div>`);
   if (me.needDiscard) {
     $$('#myCards .pair .card, #seats .seat.me .cards .card').forEach(el => el.onclick = e => { e.stopPropagation(); st.ctl.send({ t: 'discard', card: +el.dataset.c }); SND.fold(); });
   }
@@ -714,10 +737,10 @@ function renderHints(v, me) {
   const coachEl = $('#coachBox');
   coachEl.classList.add('hidden');
   st.coachAct = null;
-  if (!me) { el.innerHTML = `<div class="hints-off">${t('w_watch')}</div>`; return; }
-  if (!v.settings.hints) { el.innerHTML = `<div class="hints-off">${t('h_off')}</div>`; return; }
+  if (!me) { setHTML(el, `<div class="hints-off">${t('w_watch')}</div>`); return; }
+  if (!v.settings.hints) { setHTML(el, `<div class="hints-off">${t('h_off')}</div>`); return; }
   if (!me.hole || me.hole.length < 2 || !me.inHand) {
-    el.innerHTML = `<div class="hints-off">${me.out ? t(v.settings.mode === 'cash' ? 'h_nochips' : 'h_out') : t('h_wait')}</div>`;
+    setHTML(el, `<div class="hints-off">${me.out ? t(v.settings.mode === 'cash' ? 'h_nochips' : 'h_out') : t('h_wait')}</div>`);
     return;
   }
   const variant = v.settings.variant;
@@ -732,10 +755,13 @@ function renderHints(v, me) {
     compute({ type: 'hints', hole: me.hole, board: v.board, variant, opps, bb: v.blinds[1] }, res => {
       if (st.hintsKey !== key) return;
       st.hints = { ...res, key };
+      st.prevHints = { hole: me.hole.join(','), d: st.hints };
       if (st.view) { renderHints(st.view, mySeatObj(st.view)); renderActions(st.view, mySeatObj(st.view)); }
     });
   }
-  const d = st.hints && (st.hints.key === key || !live) ? st.hints : null;
+  let d = st.hints && (st.hints.key === key || !live) ? st.hints : null;
+  let stale = false;
+  if (!d && st.prevHints && st.prevHints.hole === me.hole.join(',')) { d = st.prevHints.d; stale = true; }
   const toCall = v.legal ? v.legal.toCall : Math.max(0, v.currentBet - me.bet);
   // строка 1: что у меня на руках
   let head = '';
@@ -766,6 +792,11 @@ function renderHints(v, me) {
   if (d && d.range && live && !me.allin && !me.folded && !me.needDiscard) {
     const a = advice(d.range.equity, toCall, v.pot, oppSeats.length + 1);
     adv = `<span class="adv ${a.kind}">${t(a.key)}</span>`;
+    if (!isDesk() && st.prefs.coach && v.legal && v.toAct === me.seat && !stale) {
+      const c = coach({ eq: d.range.equity, toCall, pot: v.pot, players: oppSeats.length + 1, outs: d.outs?.count || 0, street: v.street, canRaise: v.legal.canRaise, stackBB: me.chips / v.blinds[1] });
+      const actTxt = c.act === 'raise' ? t('ca_raise', { p: Math.round(c.size * 100) }) : t('ca_' + c.act);
+      adv = `<span class="adv coach">🎓 <b>${esc(actTxt)}</b> — ${esc(t('why_' + c.why))}</span>`;
+    }
   }
   h += `<div class="hint-foot">${adv || '<span></span>'}<button class="more-btn" id="tglDetail">${t(detail ? 'h_less_detail' : 'h_more_detail')}</button></div>`;
   // подробности по желанию
@@ -786,16 +817,17 @@ function renderHints(v, me) {
     }
     h += `</div>`;
   }
-  // тренер
-  if (d && d.range && st.prefs.coach && v.legal && v.toAct === me.seat) {
+  // тренер (на телефоне показан в строке совета, здесь — подсветка кнопки и блок для компьютера)
+  if (d && d.range && !stale && st.prefs.coach && v.legal && v.toAct === me.seat) {
     const c = coach({ eq: d.range.equity, toCall, pot: v.pot, players: oppSeats.length + 1, outs: d.outs?.count || 0, street: v.street, canRaise: v.legal.canRaise, stackBB: me.chips / v.blinds[1] });
     const actTxt = c.act === 'raise' ? t('ca_raise', { p: Math.round(c.size * 100) }) : t('ca_' + c.act);
     coachEl.innerHTML = `<b>🎓 ${t('coach_title')}</b> ${esc(actTxt)} — ${esc(t('why_' + c.why))}`;
     coachEl.classList.remove('hidden');
     st.coachAct = c;
   }
-  el.innerHTML = h;
+  setHTML(el, h);
   el.classList.toggle('detail', detail);
+  el.classList.toggle('stale', stale);
   $('#tglDetail').onclick = () => { st.prefs.detail = !st.prefs.detail; LS.set('rp_prefs', st.prefs); renderHints(st.view, mySeatObj(st.view)); };
   const tg = $('#tglProbs');
   if (tg) tg.onclick = () => { st.showProbs = !st.showProbs; renderHints(st.view, mySeatObj(st.view)); };
@@ -829,45 +861,45 @@ function renderActions(v, me) {
   $('#game').classList.toggle('prestart', !v.handNo);
   const host = st.ctl?.isHost();
   if (v.tourOver) {
-    el.innerHTML = `<div class="row">${host ? `<button class="btn gold" id="aNewTour">${t('b_newtour')}</button>` : ''}<button class="btn ghost" id="aPlaces">${t('b_results')}</button></div>`;
+    setHTML(el, `<div class="row">${host ? `<button class="btn gold" id="aNewTour">${t('b_newtour')}</button>` : ''}<button class="btn ghost" id="aPlaces">${t('b_results')}</button></div>`);
     if ($('#aNewTour')) $('#aNewTour').onclick = () => st.ctl.newTournament();
     $('#aPlaces').onclick = () => showTourOver(v.places, v.prizes);
     return;
   }
   if (!v.handNo || (v.phase === 'idle' && host && !st.ctl.started)) {
     if (host) {
-      el.innerHTML = `<div class="row">
+      setHTML(el, `<div class="row">
           <select id="aBotStyle" style="flex:1.3">${Object.keys(BOT_STYLES).map(k => `<option value="${k}" ${k === st.hostStyle ? 'selected' : ''}>${t('bot_' + k)}</option>`).join('')}</select>
           <button class="btn ghost" id="aAddBot">${t('b_add_bot')}</button>
         </div>
-        <div class="row"><button class="btn ghost" id="aShare">${t('b_invite')}</button><button class="btn gold" id="aStart">${t('b_start')}</button></div>`;
+        <div class="row"><button class="btn ghost" id="aShare">${t('b_invite')}</button><button class="btn gold" id="aStart">${t('b_start')}</button></div>`);
       $('#aBotStyle').onchange = e => st.hostStyle = e.target.value;
       $('#aAddBot').onclick = () => st.ctl.addBot(st.hostStyle);
       $('#aStart').onclick = () => st.ctl.start();
       $('#aShare').onclick = share;
-    } else el.innerHTML = `<div class="wait-msg">${t('w_wait_host')}</div>`;
+    } else setHTML(el, `<div class="wait-msg">${t('w_wait_host')}</div>`);
     return;
   }
-  if (!me) { el.innerHTML = `<div class="wait-msg">${t('w_watch')}</div>`; return; }
+  if (!me) { setHTML(el, `<div class="wait-msg">${t('w_watch')}</div>`); return; }
   // ананас: выбор сброса
   if (v.phase === 'discard') {
     if (me.needDiscard) {
       const rec = st.hints?.keeps?.[0];
-      el.innerHTML = `<div class="discard-box"><b>${t('discard_title')}</b><span>${t('discard_hint')}</span>${rec && v.settings.hints ? `<span class="rec">${t('discard_rec', { c: cardText(rec.drop) })}</span>` : ''}</div>`;
-    } else el.innerHTML = `<div class="wait-msg">${t('discard_wait')}</div>`;
+      setHTML(el, `<div class="discard-box"><b>${t('discard_title')}</b><span>${t('discard_hint')}</span>${rec && v.settings.hints ? `<span class="rec">${t('discard_rec', { c: cardText(rec.drop) })}</span>` : ''}</div>`);
+    } else setHTML(el, `<div class="wait-msg">${t('discard_wait')}</div>`);
     return;
   }
   // нет фишек
   if ((me.chips <= 0 && !(me.inHand && v.phase !== 'over' && v.phase !== 'idle')) || me.out) {
     const canRebuy = v.settings.mode === 'cash' || (me.canRebuy && v.rebuyOpen);
     if (canRebuy) {
-      el.innerHTML = `<button class="btn gold big" id="aRebuy">${t('b_rebuy', { a: fmt(v.settings.startChips) })}</button>`;
+      setHTML(el, `<button class="btn gold big" id="aRebuy">${t('b_rebuy', { a: fmt(v.settings.startChips) })}</button>`);
       $('#aRebuy').onclick = () => st.ctl.send({ t: 'rebuy' });
-    } else el.innerHTML = `<div class="wait-msg">${me.place ? t('w_out_place', { p: me.place }) : t('w_out')}</div>`;
+    } else setHTML(el, `<div class="wait-msg">${me.place ? t('w_out_place', { p: me.place }) : t('w_out')}</div>`);
     return;
   }
   if (me.sitOut) {
-    el.innerHTML = `<div class="wait-msg">${t('w_sitout')}</div><button class="btn green big" id="aBack">${t('b_back_table')}</button>`;
+    setHTML(el, `<div class="wait-msg">${t('w_sitout')}</div><button class="btn green big" id="aBack">${t('b_back_table')}</button>`);
     $('#aBack').onclick = () => st.ctl.send({ t: 'sitout', v: false });
     return;
   }
@@ -876,13 +908,13 @@ function renderActions(v, me) {
     if (st.raiseOpen && L.canRaise) return renderRaise(v, L);
     const callTxt = L.canCheck ? t('b_check') : (L.toCall >= me.chips ? t('b_allin_call', { a: fmt(L.toCall) }) : t('b_call', { a: fmt(L.toCall) }));
     const rec = st.coachAct ? (st.coachAct.act === 'raise' || st.coachAct.act === 'allin' ? 'aRaise' : st.coachAct.act === 'fold' ? 'aFold' : 'aCall') : '';
-    el.innerHTML = `<div class="row">
+    setHTML(el, `<div class="row">
       <button class="btn red ${rec === 'aFold' ? 'rec' : ''}" id="aFold">${t('b_fold')}<kbd>F</kbd></button>
       <button class="btn green ${rec === 'aCall' ? 'rec' : ''}" id="aCall">${callTxt}<kbd>C</kbd></button>
       ${L.canRaise ? `<button class="btn gold ${rec === 'aRaise' ? 'rec' : ''}" id="aRaise">${t(L.currentBet === 0 ? 'b_bet' : 'b_raise')}<kbd>R</kbd></button>` : ''}
-    </div>`;
+    </div>`);
     // фолд, когда можно бесплатно чекнуть, — подтверждается вторым нажатием
-    const armFold = () => { const b = $('#aFold'); if (b) { b.classList.add('armed'); b.innerHTML = `${t('fold_sure')}<kbd>F</kbd>`; } };
+    const armFold = () => { const b = $('#aFold'); if (b) { b.classList.add('armed'); b.innerHTML = `${t('fold_sure')}<kbd>F</kbd>`; el._h = null; } };
     if (st.foldArmed) armFold();
     $('#aFold').onclick = () => {
       if (L.canCheck && !st.foldArmed) {
@@ -907,7 +939,7 @@ function renderActions(v, me) {
     if (me.inHand && me.hole && me.hole.length && !(v.lastResult?.shown || {})[me.id]) btns.push(`<button class="btn ghost" id="aShow">${t('b_show')}</button>`);
     if (st.lastReview && st.lastReview.handNo === v.handNo) btns.push(`<button class="btn ghost" id="aReview">${t('b_review')}</button>`);
     btns.push(`<button class="btn ghost" id="aSit">${t('b_sitout')}</button>`);
-    el.innerHTML = `<div class="row">${btns.join('')}</div>`;
+    setHTML(el, `<div class="row">${btns.join('')}</div>`);
     if ($('#aShow')) $('#aShow').onclick = () => st.ctl.send({ t: 'show' });
     if ($('#aReview')) $('#aReview').onclick = () => openReview(st.lastReview);
     $('#aSit').onclick = () => st.ctl.send({ t: 'sitout', v: true });
@@ -915,11 +947,11 @@ function renderActions(v, me) {
   }
   if (me.inHand && !me.folded && !me.allin && v.phase === 'betting') {
     const pa = st.preAction;
-    el.innerHTML = `<div class="pre-acts">
+    setHTML(el, `<div class="pre-acts">
       <label><input type="checkbox" data-pa="checkfold" ${pa === 'checkfold' ? 'checked' : ''}> ${t('pre_cf')}</label>
       <label><input type="checkbox" data-pa="check" ${pa === 'check' ? 'checked' : ''}> ${t('pre_check')}</label>
       <label><input type="checkbox" data-pa="callany" ${pa === 'callany' ? 'checked' : ''}> ${t('pre_callany')}</label>
-    </div>`;
+    </div>`);
     $$('#actions input[data-pa]').forEach(i => i.onchange = () => { st.preAction = i.checked ? i.dataset.pa : null; renderActions(st.view, mySeatObj()); });
     return;
   }
@@ -927,7 +959,7 @@ function renderActions(v, me) {
   if (me.allin && me.inHand) txt = t('w_allin');
   else if (me.folded && me.inHand) txt = t('w_folded');
   if (host && st.ctl.paused) txt = t('w_paused');
-  el.innerHTML = `<div class="row"><div class="wait-msg" style="flex:3">${txt}</div><button class="btn ghost sm" id="aSit" style="flex:1">${t('b_sitout')}</button></div>`;
+  setHTML(el, `<div class="row"><div class="wait-msg" style="flex:3">${txt}</div><button class="btn ghost sm" id="aSit" style="flex:1">${t('b_sitout')}</button></div>`);
   $('#aSit').onclick = () => st.ctl.send({ t: 'sitout', v: true });
 }
 
@@ -946,7 +978,7 @@ function renderRaise(v, L) {
   st.raiseVal = clamp(st.raiseVal);
   const label = val => val >= L.allinTo ? t('amt_allin', { a: fmt(val) }) : t(L.currentBet === 0 ? 'amt_bet' : 'amt_raise', { a: fmt(val) });
   const isAllin = st.raiseVal >= L.allinTo;
-  el.innerHTML = `<div class="raise-box">
+  setHTML(el, `<div class="raise-box">
     <div class="amt">${label(st.raiseVal)}</div>
     ${L.limit === 'pl' ? `<div class="hint">${t('amt_pl', { a: fmt(L.maxTo) })}</div>` : ''}
     <div class="row r-slider" style="gap:6px">
@@ -956,13 +988,14 @@ function renderRaise(v, L) {
     </div>
     <div class="presets">${presets.map(([tx, val], i) => `<button class="btn ghost" data-v="${val}">${tx}<kbd>${i + 1}</kbd></button>`).join('')}</div>
     <div class="row r-go"><button class="btn ghost" id="rBack">${t('b_back')}<kbd>Esc</kbd></button><button class="btn gold" id="rGo">${goLabel(isAllin)}</button></div>
-  </div>`;
+  </div>`);
   const upd = val => { st.raiseVal = clamp(val); renderRaise(st.view, st.view.legal); };
   const nudge = (dir, big) => upd(st.raiseVal + dir * step * 2 * (big ? 5 : 1));
   $('#rSlider').oninput = e => {
     st.raiseVal = clamp(+e.target.value);
     el.querySelector('.amt').textContent = label(st.raiseVal);
     $('#rGo').innerHTML = goLabel(st.raiseVal >= L.allinTo);
+    el._h = null;
     SND.tick();
   };
   $('#rMinus').onclick = () => nudge(-1);
@@ -972,7 +1005,7 @@ function renderRaise(v, L) {
   const go = () => act(st.raiseVal >= L.allinTo ? 'allin' : 'raise', st.raiseVal);
   $('#rGo').onclick = go;
   // колесо мыши над панелью ставки меняет размер (с Shift — крупнее)
-  el.querySelector('.raise-box').addEventListener('wheel', e => { e.preventDefault(); nudge(e.deltaY < 0 ? 1 : -1, e.shiftKey); }, { passive: false });
+  el.querySelector('.raise-box').onwheel = e => { e.preventDefault(); nudge(e.deltaY < 0 ? 1 : -1, e.shiftKey); };
   st.raiseCtl = { go, nudge, preset: i => presets[i] && upd(presets[i][1]) };
 }
 const goLabel = allin => `${t(allin ? 'b_allin' : 'b_confirm')}<kbd>Enter</kbd>`;
@@ -1011,8 +1044,8 @@ function onHotkey(e) {
   if ((e.code === 'Enter' || e.code === 'NumpadEnter') && isDesk()) { e.preventDefault(); setDockTab('chat'); $('#chatIn').focus(); }
 }
 
-// ---------- таймеры ----------
-setInterval(() => {
+// ---------- таймеры (кольцо хода, уровень блайндов) ----------
+function tickTimers() {
   const v = st.view; if (!v) return;
   const now = Date.now() + st.clockOffset;
   const ring = document.querySelector('.tring');
@@ -1038,7 +1071,8 @@ setInterval(() => {
     const m = Math.floor(left / 60000), s = Math.floor(left / 1000) % 60;
     lt.textContent = `${t('lvl', { n: v.level })} · ${m}:${String(s).padStart(2, '0')}`;
   }
-}, 250);
+}
+setInterval(tickTimers, 250);
 
 // ---------- чат, лог, эмодзи ----------
 function chatText(m) { return m.sys ? t(m.key, m.params) : m.text; }
@@ -1297,7 +1331,8 @@ function initGameUI() {
   $('#btnSoundTop').onclick = () => { st.prefs.sound = !st.prefs.sound; savePrefs(); };
   document.addEventListener('keydown', onHotkey);
   DESK_MQ.addEventListener('change', applyLayout);
-  new ResizeObserver(() => { fitStage(); const was = $('#tableWrap').classList.contains('compact'); updateCompact(); if (was !== $('#tableWrap').classList.contains('compact')) requestAnimationFrame(placeHeroBits); else placeHeroBits(); }).observe($('#tableWrap'));
+  new ResizeObserver(() => { fitStage(); updateCompact(); placeHeroBits(); }).observe($('#tableWrap'));
+  updateCompact();
   applyLayout();
   $('#btnMenu').onclick = openMenu;
   $('#btnFair').onclick = openFair;

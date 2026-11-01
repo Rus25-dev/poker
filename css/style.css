@@ -391,3 +391,18 @@ body:not(.desk) #game.prestart #myArea { display: none; }
 .lobby-panel .row.wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 #btnTrain { grid-column: 1 / -1; }
 #tableWrap.compact .seat.me .plate { padding: 1px 10px 1px 24px; min-width: 92px; }
+
+/* ----- стабильная раскладка на телефоне: нижняя часть постоянной высоты, стол не «прыгает» ----- */
+body:not(.desk) #hints { height: 98px; max-height: none; overflow: hidden; }
+body:not(.desk) #hints.detail { height: 31dvh; overflow-y: auto; }
+body:not(.desk) #hints .hints-off { margin: auto; }
+body:not(.desk) #coachBox { display: none !important; }
+.hint-foot .adv { min-width: 0; font-size: 13px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.hint-foot .adv.coach { color: #d6c2ff; font-weight: 500; }
+.hint-foot .adv.coach b { color: #fff; }
+#hints.stale .eq-big, #hints.stale .eqbar, #hints.stale .adv { opacity: .45; }
+#hints .eq-big, #hints .eqbar, #hints .adv { transition: opacity .2s; }
+body:not(.desk) #actions { min-height: 52px; justify-content: center; }
+body:not(.desk) #actions > .row > .btn:not(.sm) { height: 52px; padding-top: 0; padding-bottom: 0; }
+.tring { transition: stroke-dashoffset .25s linear, stroke .3s; }
+body:not(.desk) .pre-acts label { height: 52px; padding-top: 0; padding-bottom: 0; }
