@@ -129,6 +129,7 @@ export class HostController {
       conn.send({ t: 'welcome', id: pid, code: this.code, gen: this.gen });
       conn.send({ t: 'avatars', map: this.avatars });
       this.sync(true);
+      this._resumeIfIdle();
       return;
     }
     if (!c.pid) return;
@@ -161,7 +162,7 @@ export class HostController {
       case 'show': if (t.showCards(pid)) this.sync(); break;
       case 'sitout':
         t.setSitOut(pid, msg.v);
-        if (!msg.v) this.strikes[pid] = 0;
+        if (!msg.v) { this.strikes[pid] = 0; this._resumeIfIdle(); }
         this.sync();
         break;
       case 'chat': {
@@ -176,7 +177,7 @@ export class HostController {
       case 'seed':
         if (typeof msg.seed === 'string' && msg.seed.length <= 64 && msg.forCommit === this.commitNext) this.seeds[pid] = msg.seed;
         break;
-      case 'rebuy': if (t.rebuy(pid)) this.sync(); break;
+      case 'rebuy': if (t.rebuy(pid)) { this.sync(); this._resumeIfIdle(); } break;
       case 'leave': t.removePlayer(pid); this.sync(true); break;
     }
   }
@@ -184,6 +185,13 @@ export class HostController {
   send(msg) { this.handle(this.myId, msg); }
 
   // ---------- управление столом ----------
+  // стол ждёт игроков (раздача не началась) — пробуем начать снова, когда кто-то сел/вернулся
+  _resumeIfIdle() {
+    if (!this.started || this.paused || this.table.tourOver || this.table.phase !== 'idle') return;
+    clearTimeout(this.timers.resume);
+    this.timers.resume = setTimeout(() => { if (this.table.phase === 'idle') this._nextHand(); }, 1500);
+  }
+
   addBot(style = 'normal') {
     const used = new Set(this.table.players().map(p => p.name));
     const name = BOT_NAMES.find(n => !used.has(n)) || 'Bot ' + makeCode(2);
@@ -193,6 +201,7 @@ export class HostController {
     this.avatars[id] = BOT_AVATAR[style] || '🤖';
     this._bcast({ t: 'avatars', map: this.avatars });
     this.sync(true);
+    this._resumeIfIdle();
   }
   removeSeat(pid) {
     if (pid === this.myId || !this.table.byId(pid)) return;

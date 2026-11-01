@@ -26,7 +26,7 @@ const QUICK = ['👍', '😂', '😱', '🔥', '🤡', '💸'];
 const AVATARS = ['🦊', '🐯', '🐼', '🐸', '🦁', '🐺', '🐨', '🐵', '🦄', '🐙', '👑', '😎', '🤠', '👽', '🐲', '🦅'];
 
 // позиции мест (в % от области стола), 0 — я, далее по часовой; раскладка зависит от числа игроков
-const P = { me: [50, 93], bl: [13, 72], l: [12, 46], tl: [14, 27], t: [50, 14], tr: [86, 27], r: [88, 46], br: [87, 72] };
+const P = { me: [50, 99], bl: [11, 60], l: [10, 41], tl: [14, 23], t: [50, 8], tr: [86, 23], r: [90, 41], br: [89, 60] };
 const LAYOUT = {
   1: [P.me], 2: [P.me, P.t], 3: [P.me, P.tl, P.tr], 4: [P.me, P.l, P.t, P.r],
   5: [P.me, P.bl, P.tl, P.tr, P.br], 6: [P.me, P.bl, P.tl, P.t, P.tr, P.br]
@@ -103,7 +103,7 @@ function setDockTab(tab) {
   else openDrawer(tab);
 }
 
-const DEFAULT_PREFS = { lang: detectLang(), felt: 'green', back: 'red', four: false, sound: true, vibrate: true, hud: true, coach: false, notify: false, avatar: AVATARS[Math.floor(Math.random() * AVATARS.length)] };
+const DEFAULT_PREFS = { lang: detectLang(), felt: 'green', back: 'red', four: false, sound: true, vibrate: true, hud: true, coach: false, detail: false, notify: false, avatar: AVATARS[Math.floor(Math.random() * AVATARS.length)] };
 const st = {
   ctl: null, view: null, prevView: null, clockOffset: 0,
   token: LS.get('rp_token', null) || (() => { const x = crypto.getRandomValues(new Uint32Array(4)).join('-'); LS.set('rp_token', x); return x; })(),
@@ -382,7 +382,7 @@ function onEvent(e) {
       break;
     }
     case 'street': addLog(`— ${t('s_' + e.street)}: ${e.board.map(cardText).join(' ')}`); break;
-    case 'hand': addLog(t('l_hand', { n: e.handNo })); st.preAction = null; break;
+    case 'hand': addLog(t('l_hand', { n: e.handNo })); st.preAction = null; st.foldArmed = false; break;
     case 'result': {
       const r = e.result;
       for (const w of r.winners) addLog(t('l_win', { name: w.name, a: fmt(w.amount) }) + (w.desc ? ' — ' + handText(w.desc) : ''));
@@ -432,7 +432,7 @@ function afterRender(prev, v) {
     st.rec.start(v);
     st.lastReview = null;
     const targets = [...$$('#seats .seat:not(.me) .cards')].filter(el => el.children.length);
-    const mine = isDesk() ? $('#seats .seat.me .cards .pair') : $('#myCards .pair');
+    const mine = $('#seats .seat.me .cards .pair');
     if (me && me.inHand && mine) targets.push(mine);
     const per = Math.max(...v.seats.filter(Boolean).map(s => s.cardCount || 0), 2);
     const dur = animateDeal(targets, $('#board'), per);
@@ -448,7 +448,7 @@ function afterRender(prev, v) {
   }
   // банк к победителю
   if (prev && v.phase === 'over' && prev.phase !== 'over' && v.lastResult) {
-    const els = v.lastResult.winners.map(w => w.id === v.you ? (isDesk() ? $('#seats .seat.me .ava') : $('#myCards')) : document.querySelector(`.seat[data-id="${CSS.escape(w.id)}"] .ava`)).filter(Boolean);
+    const els = v.lastResult.winners.map(w => w.id === v.you ? $('#seats .seat.me .ava') : document.querySelector(`.seat[data-id="${CSS.escape(w.id)}"] .ava`)).filter(Boolean);
     setTimeout(() => animatePotToWinners($('#potInfo'), els), 350);
     finishHandForMe(v);
   }
@@ -558,7 +558,7 @@ function render() {
     const prevSeat = st.prevView && st.prevView.handNo === v.handNo ? st.prevView.seats[i] : null;
     const reveal = !!(p.hole && !isMe && prevSeat && !prevSeat.hole);
     // на компьютере мои карты рисует renderMine прямо в моё место за столом
-    const cards = desk && isMe ? '' : p.hole ? p.hole.map(c => cardHTML(c, 'sm' + (reveal ? ' flip' : ''), bestCards.has(c))).join('')
+    const cards = isMe ? '' : p.hole ? p.hole.map(c => cardHTML(c, 'sm' + (reveal ? ' flip' : ''), bestCards.has(c))).join('')
       : (p.cardCount ? Array.from({ length: p.cardCount }, () => cardHTML(null, 'sm')).join('') : '');
     const sh = lr && lr.shown[p.id];
     const shownHand = sh && sh.desc ? `<div class="hand">${esc(handText(sh.desc))}</div>` : '';
@@ -586,9 +586,11 @@ function render() {
       if (desk) {
         if (isMe) { bx = 50; by = 61; }
         else { bx = x + (50 - x) * 0.47; by = y + (50 - y) * 0.47 + (y < 50 ? 4 : 0); }
-      } else {
-        const k = y < 40 ? 0.58 : 0.42;
-        bx = x + (50 - x) * k; by = y + (50 - y) * k;
+      } else if (isMe) { bx = 50; by = 64; }          // уточняется по размеру карт в placeHeroBits()
+      else {
+        const pos = posMap[i];
+        const M = new Map([[P.t, [72, 20]], [P.tl, [27, 34]], [P.tr, [73, 34]], [P.l, [14, 56]], [P.r, [86, 56]], [P.bl, [26, 68]], [P.br, [74, 68]]]);
+        [bx, by] = M.get(pos) || [x + (50 - x) * 0.42, y + (50 - y) * 0.42];
       }
       html += `<div class="bet" data-seat="${i}" style="left:${bx}%;top:${by}%"><span class="chipico"></span>${fmt(p.bet)}</div>`;
     }
@@ -598,12 +600,13 @@ function render() {
       if (desk) {
         if (isMe) { dx = 60.5; dy = 82; }
         else { const side = Math.abs(50 - x) > 15; dx = x + (50 - x) * 0.3 + (side ? 0 : 8); dy = y + (50 - y) * 0.3 + (side ? (y < 50 ? 10 : -9) : 0); }
-      } else { dx = x + (50 - x) * 0.28 + (isBottom ? 14 : 0); dy = y + (50 - y) * 0.28; }
-      html += `<div class="dealer-btn" style="left:${dx}%;top:${dy}%">D</div>`;
+      } else if (isBottom) { dx = 71; dy = 79; }
+      else { dx = x + (50 - x) * 0.3; dy = y + (50 - y) * 0.3 + (y < 30 ? 6 : 0); }
+      html += `<div class="dealer-btn${isMe ? ' me-d' : ''}" style="left:${dx}%;top:${dy}%">D</div>`;
     }
   }
   // на низком экране прячем рубашки соперников и уменьшаем места, чтобы ничего не наезжало на стол
-  $('#tableWrap').classList.toggle('compact', !desk && $('#tableWrap').clientHeight < 330);
+  updateCompact();
   $('#seats').innerHTML = html;
   bindSeatTaps();
 
@@ -636,6 +639,28 @@ function render() {
 
   renderMine(v, me);
   renderActions(v, me);
+  placeHeroBits();
+}
+
+// низкий стол на телефоне: прячем рубашки соперников и уменьшаем места
+function updateCompact() {
+  const w = $('#tableWrap');
+  w.classList.toggle('compact', !isDesk() && w.clientHeight < 380);
+}
+// на телефоне моя ставка — над моими картами, кнопка дилера — справа от них (по фактическому размеру)
+function placeHeroBits() {
+  if (isDesk() || !st.view) return;
+  const hero = $('#seats .seat.me .cards');
+  if (!hero) return;
+  const stage = $('#stage').getBoundingClientRect(), r = hero.getBoundingClientRect();
+  if (!stage.height || !r.height) return;
+  const me = mySeatObj();
+  const bet = me && $(`#seats .bet[data-seat="${me.seat}"]`);
+  if (bet) { bet.style.left = '50%'; bet.style.top = (r.top - stage.top - 14) + 'px'; }
+  if (me && st.view.dealer === me.seat) {
+    const d = $('#seats .dealer-btn.me-d');
+    if (d) { d.style.left = (r.right - stage.left + 16) + 'px'; d.style.top = (r.top - stage.top + r.height * 0.6) + 'px'; }
+  }
 }
 
 function bindSeatTaps() {
@@ -663,7 +688,7 @@ function statLine(name) {
 
 function renderMine(v, me) {
   const box = $('#myCards');
-  if (!me) { box.innerHTML = `<div class="me-info">${t('w_watch')}</div>`; $('#hints').innerHTML = ''; $('#coachBox').classList.add('hidden'); return; }
+  if (!me) { box.innerHTML = ''; renderHints(v, null); return; }
   const myTurn = v.legal && v.toAct === me.seat;
   box.classList.toggle('turn', !!myTurn);
   box.classList.toggle('discard', !!me.needDiscard);
@@ -671,11 +696,11 @@ function renderMine(v, me) {
   const best = new Set(lr && lr.shown[me.id] ? lr.shown[me.id].best : []);
   const n = me.hole ? me.hole.length : 0;
   const size = n >= 4 ? 'md' : n === 3 ? 'lg3' : 'lg';
-  const cards = n ? me.hole.map(c => cardHTML(c, size + (me.folded ? ' dim' : ''), best.has(c))).join('') : `<div class="card lg empty"></div><div class="card lg empty"></div>`;
+  const cards = n ? me.hole.map(c => cardHTML(c, size + (me.folded ? ' dim' : ''), best.has(c))).join('') : '';
   const pos = v.dealer === me.seat ? ' · D' : v.sbSeat === me.seat && v.handNo ? ' · ' + t('a_sb', { a: '' }).trim() : v.bbSeat === me.seat && v.handNo ? ' · ' + t('a_bb', { a: '' }).trim() : '';
   const myAct = me.lastAction && v.phase !== 'idle' ? `<span class="my-act">${esc(actionText(me.lastAction))}</span>` : '';
   box.innerHTML = `<div class="pair n${n}">${cards}</div><div class="me-info"><span class="me-ava">${avatarHTML(st.prefs.avatar, me.name)}</span><b>${fmt(me.chips)}</b>${pos}${myAct}</div>`;
-  const heroSlot = isDesk() ? $('#seats .seat.me .cards') : null;
+  const heroSlot = $('#seats .seat.me .cards');
   if (heroSlot) heroSlot.innerHTML = `<div class="pair n${n}">${cards}</div>`;
   if (me.needDiscard) {
     $$('#myCards .pair .card, #seats .seat.me .cards .card').forEach(el => el.onclick = e => { e.stopPropagation(); st.ctl.send({ t: 'discard', card: +el.dataset.c }); SND.fold(); });
@@ -688,16 +713,20 @@ function renderHints(v, me) {
   const el = $('#hints');
   const coachEl = $('#coachBox');
   coachEl.classList.add('hidden');
+  st.coachAct = null;
+  if (!me) { el.innerHTML = `<div class="hints-off">${t('w_watch')}</div>`; return; }
   if (!v.settings.hints) { el.innerHTML = `<div class="hints-off">${t('h_off')}</div>`; return; }
   if (!me.hole || me.hole.length < 2 || !me.inHand) {
     el.innerHTML = `<div class="hints-off">${me.out ? t(v.settings.mode === 'cash' ? 'h_nochips' : 'h_out') : t('h_wait')}</div>`;
     return;
   }
   const variant = v.settings.variant;
+  const detail = !!st.prefs.detail;
+  const live = v.phase === 'betting' || v.phase === 'discard' || v.phase === 'runout';
   const oppSeats = v.seats.filter(s => s && s.inHand && !s.folded && s.id !== me.id);
   const opps = oppSeats.map(s => s.hist || []);
   const key = me.hole.join(',') + '|' + v.board.join(',') + '|' + oppSeats.map(s => s.id + (s.hist || []).length).join(';');
-  if (key !== st.hintsKey) {
+  if (key !== st.hintsKey && live) {
     st.hintsKey = key;
     st.hints = null;
     compute({ type: 'hints', hole: me.hole, board: v.board, variant, opps, bb: v.blinds[1] }, res => {
@@ -706,51 +735,68 @@ function renderHints(v, me) {
       if (st.view) { renderHints(st.view, mySeatObj(st.view)); renderActions(st.view, mySeatObj(st.view)); }
     });
   }
-  const d = st.hints && st.hints.key === key ? st.hints : null;
+  const d = st.hints && (st.hints.key === key || !live) ? st.hints : null;
   const toCall = v.legal ? v.legal.toCall : Math.max(0, v.currentBet - me.bet);
-  let h = '';
+  // строка 1: что у меня на руках
+  let head = '';
   if (v.board.length === 0) {
     const tr = preflopTier(me.hole, variant);
-    h += `<div class="hand-now">${t('h_preflop')} <span class="tier ${tr.color}">${t('tier_' + tr.tier)}</span> <small>${t('h_score', { n: tr.score })}</small></div>`;
-  } else {
-    const hole = me.hole.length === 3 && variant === 'pineapple' ? me.hole.slice(0, 2) : me.hole;
-    if (me.hole.length !== 3) h += `<div class="hand-now">${esc(handText(handDesc(evalHand(hole, v.board, variant === 'pineapple' ? 'holdem' : variant))))}</div>`;
+    head = `${t('h_preflop')} <span class="tier ${tr.color}">${t('tier_' + tr.tier)}</span>${detail ? ` <small>${t('h_score', { n: tr.score })}</small>` : ''}`;
+  } else if (me.hole.length !== 3) {
+    head = esc(handText(handDesc(evalHand(me.hole, v.board, variant === 'pineapple' ? 'holdem' : variant))));
   }
+  let h = '';
+  // главное: шанс выиграть одной цифрой со шкалой
   if (d && d.range) {
-    if (d.keeps) {
-      const k = d.keeps[0];
-      const keep = me.hole.filter(c => c !== k.drop).map(cardText).join(' ');
-      h += `<div class="line keep"><span>${t('h_keep', { cards: keep, p: Math.round(k.eq * 100) })}</span></div>`;
-    }
+    const eqPct = Math.round(d.range.equity * 100);
+    h += `<div class="hint-top"><span class="hand-now">${head}</span><b class="eq-big ${eqPct >= 50 ? 'hi' : eqPct >= 25 ? 'mid' : 'lo'}">${eqPct}%</b></div>`;
     const w = Math.round(d.range.win * 100), ti = Math.round(d.range.tie * 100);
-    h += `<div class="line"><span>${t('h_vs_range')} <small>(${t('h_opps', { n: oppSeats.length })})</small></span><b>${(d.range.equity * 100).toFixed(1)}%</b></div>`;
     h += `<div class="eqbar"><i class="w" style="width:${w}%"></i><i class="t" style="width:${ti}%"></i></div>`;
+  } else {
+    h += `<div class="hint-top"><span class="hand-now">${head}</span>${live ? `<small>${t('h_calc')}</small>` : ''}</div>`;
+  }
+  // ананас: какую карту сбросить — это важно и в простом режиме
+  if (d && d.keeps) {
+    const k = d.keeps[0];
+    const keep = me.hole.filter(c => c !== k.drop).map(cardText).join(' ');
+    h += `<div class="line keep"><span>${t('h_keep', { cards: keep, p: Math.round(k.eq * 100) })}</span></div>`;
+  }
+  // короткий совет (только пока раздача идёт и мне есть что решать)
+  let adv = '';
+  if (d && d.range && live && !me.allin && !me.folded && !me.needDiscard) {
+    const a = advice(d.range.equity, toCall, v.pot, oppSeats.length + 1);
+    adv = `<span class="adv ${a.kind}">${t(a.key)}</span>`;
+  }
+  h += `<div class="hint-foot">${adv || '<span></span>'}<button class="more-btn" id="tglDetail">${t(detail ? 'h_less_detail' : 'h_more_detail')}</button></div>`;
+  // подробности по желанию
+  if (detail && d && d.range) {
+    h += `<div class="hint-detail">`;
+    h += `<div class="line"><span>${t('h_vs_range')} <small>(${t('h_opps', { n: oppSeats.length })})</small></span><b>${(d.range.equity * 100).toFixed(1)}%</b></div>`;
     if (d.random) h += `<div class="line sub"><span>${t('h_vs_any', { p: (d.random.equity * 100).toFixed(1) })}</span></div>`;
-    if (v.board.length >= 3 && v.board.length < 5 && d.outs && d.outs.count) {
+    if (live && v.board.length >= 3 && v.board.length < 5 && d.outs && d.outs.count) {
       const left = 52 - me.hole.length - v.board.length;
       const next = d.outs.count / left;
       const toRiver = v.board.length === 3 ? 1 - (1 - d.outs.count / left) * (1 - d.outs.count / (left - 1)) : next;
       h += `<div class="line"><span>${t('h_outs', { n: d.outs.count })}</span><b>${t('h_next', { p: Math.round(next * 100) })}${v.board.length === 3 ? ' · ' + t('h_river', { p: Math.round(toRiver * 100) }) : ''}</b></div>`;
     }
-    if (toCall > 0 && !me.allin) h += `<div class="line"><span>${t('h_call', { a: fmt(toCall), b: fmt(v.pot) })}</span><b>${t('h_need', { p: Math.round(potOdds(toCall, v.pot) * 100) })}</b></div>`;
-    if (!me.allin && !me.folded && !me.needDiscard) {
-      const a = advice(d.range.equity, toCall, v.pot, oppSeats.length + 1);
-      h += `<div class="adv ${a.kind}">${t(a.key)}</div>`;
-    }
+    if (live && toCall > 0 && !me.allin && !me.folded) h += `<div class="line"><span>${t('h_call', { a: fmt(toCall), b: fmt(v.pot) })}</span><b>${t('h_need', { p: Math.round(potOdds(toCall, v.pot) * 100) })}</b></div>`;
     if (v.board.length < 5 && d.range.categories) {
       h += `<div class="more" id="tglProbs">${t(st.showProbs ? 'h_less' : 'h_more')}</div>`;
       if (st.showProbs) h += '<div class="probs">' + d.range.categories.map((p, i) => p > 0.0005 ? `<span>${t('cat_' + i)}</span><i style="width:${Math.max(1, p * 100)}%"></i><span>${(p * 100).toFixed(1)}%</span>` : '').reverse().join('') + '</div>';
     }
-    // тренер
-    if (st.prefs.coach && v.legal && v.toAct === me.seat) {
-      const c = coach({ eq: d.range.equity, toCall, pot: v.pot, players: oppSeats.length + 1, outs: d.outs?.count || 0, street: v.street, canRaise: v.legal.canRaise, stackBB: me.chips / v.blinds[1] });
-      const actTxt = c.act === 'raise' ? t('ca_raise', { p: Math.round(c.size * 100) }) : t('ca_' + c.act);
-      coachEl.innerHTML = `<b>🎓 ${t('coach_title')}</b> ${esc(actTxt)} — ${esc(t('why_' + c.why))}`;
-      coachEl.classList.remove('hidden');
-      st.coachAct = c;
-    } else st.coachAct = null;
-  } else h += `<div class="line"><span>${t('h_calc')}</span></div>`;
+    h += `</div>`;
+  }
+  // тренер
+  if (d && d.range && st.prefs.coach && v.legal && v.toAct === me.seat) {
+    const c = coach({ eq: d.range.equity, toCall, pot: v.pot, players: oppSeats.length + 1, outs: d.outs?.count || 0, street: v.street, canRaise: v.legal.canRaise, stackBB: me.chips / v.blinds[1] });
+    const actTxt = c.act === 'raise' ? t('ca_raise', { p: Math.round(c.size * 100) }) : t('ca_' + c.act);
+    coachEl.innerHTML = `<b>🎓 ${t('coach_title')}</b> ${esc(actTxt)} — ${esc(t('why_' + c.why))}`;
+    coachEl.classList.remove('hidden');
+    st.coachAct = c;
+  }
   el.innerHTML = h;
+  el.classList.toggle('detail', detail);
+  $('#tglDetail').onclick = () => { st.prefs.detail = !st.prefs.detail; LS.set('rp_prefs', st.prefs); renderHints(st.view, mySeatObj(st.view)); };
   const tg = $('#tglProbs');
   if (tg) tg.onclick = () => { st.showProbs = !st.showProbs; renderHints(st.view, mySeatObj(st.view)); };
 }
@@ -778,6 +824,9 @@ function computeAllinEq(v) {
 function renderActions(v, me) {
   const el = $('#actions');
   $('#dockRight').classList.toggle('raising', !!(st.raiseOpen && v.legal));
+  $('#hud').classList.toggle('raising', !!(st.raiseOpen && v.legal));
+  $('#game').classList.toggle('raising', !!(st.raiseOpen && v.legal));
+  $('#game').classList.toggle('prestart', !v.handNo);
   const host = st.ctl?.isHost();
   if (v.tourOver) {
     el.innerHTML = `<div class="row">${host ? `<button class="btn gold" id="aNewTour">${t('b_newtour')}</button>` : ''}<button class="btn ghost" id="aPlaces">${t('b_results')}</button></div>`;
@@ -832,7 +881,18 @@ function renderActions(v, me) {
       <button class="btn green ${rec === 'aCall' ? 'rec' : ''}" id="aCall">${callTxt}<kbd>C</kbd></button>
       ${L.canRaise ? `<button class="btn gold ${rec === 'aRaise' ? 'rec' : ''}" id="aRaise">${t(L.currentBet === 0 ? 'b_bet' : 'b_raise')}<kbd>R</kbd></button>` : ''}
     </div>`;
-    $('#aFold').onclick = () => { if (L.canCheck && !confirm(t('confirm_fold'))) return; act('fold'); };
+    // фолд, когда можно бесплатно чекнуть, — подтверждается вторым нажатием
+    const armFold = () => { const b = $('#aFold'); if (b) { b.classList.add('armed'); b.innerHTML = `${t('fold_sure')}<kbd>F</kbd>`; } };
+    if (st.foldArmed) armFold();
+    $('#aFold').onclick = () => {
+      if (L.canCheck && !st.foldArmed) {
+        st.foldArmed = true; armFold(); if (navigator.vibrate) try { navigator.vibrate(20); } catch { /* */ }
+        clearTimeout(st.foldT);
+        st.foldT = setTimeout(() => { st.foldArmed = false; if (st.view) renderActions(st.view, mySeatObj()); }, 2500);
+        return;
+      }
+      st.foldArmed = false; clearTimeout(st.foldT); act('fold');
+    };
     $('#aCall').onclick = () => act(L.canCheck ? 'check' : 'call');
     if (L.canRaise) $('#aRaise').onclick = () => {
       st.raiseOpen = true;
@@ -1018,7 +1078,7 @@ function floatAt(id, content, isMsg = false) {
   const v = st.view; if (!v) return;
   let x = 50, y = 80;
   const p = v.seats.find(s => s && s.id === id);
-  if (p) { [x, y] = posFor(v)[p.seat] || P.t; if (p.id === v.you) y = isDesk() ? 72 : 82; }
+  if (p) { [x, y] = posFor(v)[p.seat] || P.t; if (p.id === v.you) y = 72; }
   const f = document.createElement('div');
   f.className = 'floater' + (isMsg ? ' msg' : '');
   f.style.left = x + '%'; f.style.top = (y - 6) + '%';
@@ -1029,6 +1089,14 @@ function floatAt(id, content, isMsg = false) {
 function sendEmoji(e) { st.ctl && st.ctl.send({ t: 'emoji', e }); }
 
 // ---------- окна ----------
+// подтверждение в окне приложения вместо системного диалога браузера
+function ask(text) {
+  return new Promise(res => {
+    modal(`<h2 class="ask-title">${esc(text)}</h2><div class="row ask-row"><button class="btn ghost" id="askNo">${t('ask_cancel')}</button><button class="btn red" id="askYes">${t('ask_ok')}</button></div>`);
+    $('#askNo').onclick = () => { closeModal(); res(false); };
+    $('#askYes').onclick = () => { closeModal(); res(true); };
+  });
+}
 function modal(html) { $('#modalBody').innerHTML = html; $('#modal').classList.remove('hidden'); }
 function closeModal() { $('#modal').classList.add('hidden'); }
 let toastT = null;
@@ -1064,7 +1132,7 @@ function openMenu() {
   $('#mSettings').onclick = openSettings;
   if ($('#mPause')) $('#mPause').onclick = () => { st.ctl.togglePause(); closeModal(); };
   if ($('#mBot')) $('#mBot').onclick = () => { st.ctl.addBot(st.hostStyle); closeModal(); };
-  $('#mLeave').onclick = () => { if (confirm(t(host ? 'confirm_close' : 'confirm_leave'))) leaveGame(); };
+  $('#mLeave').onclick = async () => { if (await ask(t(host ? 'confirm_close' : 'confirm_leave'))) leaveGame(); };
 }
 
 function openSettings() {
@@ -1082,7 +1150,7 @@ function openSettings() {
     <h3>${t('set_back')}</h3>${seg('sBack', ['red', 'blue', 'black'].map(f => [f, t('back_' + f)]), p.back)}
     <div class="settings-sw">
       ${sw('s4', 'set_4color', p.four)}${sw('sSound', 'set_sound', p.sound)}${sw('sVib', 'set_vibro', p.vibrate)}
-      ${sw('sHud', 'set_hud', p.hud)}${sw('sCoach', 'set_coach', p.coach)}${sw('sNotify', 'set_notify', p.notify)}
+      ${sw('sDetail', 'set_detail', p.detail)}${sw('sHud', 'set_hud', p.hud)}${sw('sCoach', 'set_coach', p.coach)}${sw('sNotify', 'set_notify', p.notify)}
     </div>
     <h3>${t('set_turn')}</h3><p class="hint" style="text-align:left">${t('turn_hint')}</p>
     <div class="form-grid"><input class="full" id="sTurnUrl" placeholder="${t('turn_url')}" value="${esc(ice.url || '')}">
@@ -1112,7 +1180,7 @@ function openSettings() {
     }
   };
   $('#sSave').onclick = () => {
-    Object.assign(p, { four: $('#s4').checked, sound: $('#sSound').checked, vibrate: $('#sVib').checked, hud: $('#sHud').checked, coach: $('#sCoach').checked, notify: $('#sNotify').checked });
+    Object.assign(p, { detail: $('#sDetail').checked, four: $('#s4').checked, sound: $('#sSound').checked, vibrate: $('#sVib').checked, hud: $('#sHud').checked, coach: $('#sCoach').checked, notify: $('#sNotify').checked });
     LS.set('rp_ice', { url: $('#sTurnUrl').value.trim(), user: $('#sTurnUser').value.trim(), pass: $('#sTurnPass').value });
     savePrefs(); closeModal(); toast(t('saved'));
   };
@@ -1132,7 +1200,7 @@ function openStats() {
     <h3>${t('st_styles')}</h3>${players.filter(p => p.hands >= 20).map(p => `<div class="hint" style="text-align:left">${esc(t('st_style_line', { name: p.name, style: t(p.style), sd: p.sdPct, big: fmt(p.biggestPot) }))}</div>`).join('') || `<p class="hint">${t('st_need20')}</p>`}
     ${tournaments.length ? `<h3>${t('st_recent')}</h3>${tournaments.slice(0, 8).map(x => `<div class="hint" style="text-align:left">${new Date(x.at).toLocaleDateString()}: ${x.places.slice(0, 3).map(p => `${p.place}. ${esc(p.name)}`).join(', ')}</div>`).join('')}` : ''}
     <button class="btn ghost" id="sReset" style="margin-top:12px">${t('st_reset')}</button>` : `<p class="hint">${t('st_empty')}</p>`}`);
-  if ($('#sReset')) $('#sReset').onclick = () => { if (confirm(t('st_reset_confirm'))) { resetStats(); st.statsCache = null; openStats(); } };
+  if ($('#sReset')) $('#sReset').onclick = async () => { if (await ask(t('st_reset_confirm'))) { resetStats(); st.statsCache = null; } openStats(); };
 }
 
 function openRules() {
@@ -1229,7 +1297,7 @@ function initGameUI() {
   $('#btnSoundTop').onclick = () => { st.prefs.sound = !st.prefs.sound; savePrefs(); };
   document.addEventListener('keydown', onHotkey);
   DESK_MQ.addEventListener('change', applyLayout);
-  new ResizeObserver(() => fitStage()).observe($('#tableWrap'));
+  new ResizeObserver(() => { fitStage(); const was = $('#tableWrap').classList.contains('compact'); updateCompact(); if (was !== $('#tableWrap').classList.contains('compact')) requestAnimationFrame(placeHeroBits); else placeHeroBits(); }).observe($('#tableWrap'));
   applyLayout();
   $('#btnMenu').onclick = openMenu;
   $('#btnFair').onclick = openFair;

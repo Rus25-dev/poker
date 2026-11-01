@@ -308,3 +308,86 @@ table.stats th { color: var(--mut); font-weight: 600; }
 }
 #tableWrap.compact .felt-inner { justify-content: flex-start; padding-top: 68px; gap: 3px; }
 #tableWrap.compact #centerMsg { font-size: 11px; min-height: 0; }
+
+/* =====================================================================
+   Телефон: я внизу стола с крупными картами, подсказки полосой под столом,
+   компактная ставка, которая всегда помещается над нижней строкой
+   ===================================================================== */
+#myCards { display: none !important; }
+#myArea { min-height: 0; }
+body:not(.desk) #felt { bottom: 12%; }
+body:not(.desk) .felt-inner { padding-bottom: 9%; }
+body:not(.desk) #centerMsg { padding: 0 17%; }
+
+/* моё место: карты над капсулой «аватар + плашка» */
+body:not(.desk) .seat.me { display: grid; width: auto; transform: translate(-50%, -100%); z-index: 3;
+  grid-template-columns: auto auto; grid-template-areas: "cards cards" "ava plate"; align-items: center; justify-items: center; }
+body:not(.desk) .seat.me .cards { grid-area: cards; margin: 0 0 6px; }
+.seat.me .pair { display: flex; gap: 5px; }
+body:not(.desk) .seat.me .cards .card { width: 60px; height: 84px; border-radius: 8px; box-shadow: 0 4px 12px #000a; }
+body:not(.desk) .seat.me .cards .card .r { font-size: 23px; top: 4px; left: 6px; }
+body:not(.desk) .seat.me .cards .card .s { font-size: 32px; bottom: 4px; right: 6px; }
+body:not(.desk) .seat.me .pair.n3 .card { width: 52px; height: 73px; }
+body:not(.desk) .seat.me .pair.n4 { gap: 3px; }
+body:not(.desk) .seat.me .pair.n4 .card { width: 46px; height: 65px; }
+body:not(.desk) .seat.me .pair.n4 .card .r, body:not(.desk) .seat.me .pair.n3 .card .r { font-size: 19px; }
+body:not(.desk) .seat.me .pair.n4 .card .s, body:not(.desk) .seat.me .pair.n3 .card .s { font-size: 25px; }
+body:not(.desk) .seat.me .cards .card.empty { background: rgba(255,255,255,.05); border: 1px dashed rgba(255,255,255,.2); box-shadow: none; }
+body:not(.desk) .seat.me .ava { grid-area: ava; width: 42px; height: 42px; font-size: 17px; z-index: 3; }
+body:not(.desk) .seat.me .ava .emo { font-size: 22px; }
+body:not(.desk) .seat.me .ava svg { inset: -6px; width: 54px; height: 54px; }
+body:not(.desk) .seat.me .plate { grid-area: plate; justify-self: start; margin: 0 0 0 -10px; padding: 2px 12px 2px 26px; min-width: 96px;
+  text-align: left; border-radius: 0 10px 10px 0; }
+body:not(.desk) .seat.me .act { top: auto; bottom: 4px; left: 100%; margin-left: 6px; }
+body:not(.desk) .seat.me .hand { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); white-space: nowrap; margin-bottom: 4px;
+  background: rgba(0,0,0,.55); padding: 1px 8px; border-radius: 999px; max-width: none; }
+body:not(.desk) .seat.me .eq { top: 30px; left: auto; right: -10px; }
+.seat.me.turn .plate { border-color: var(--yellow); }
+body:not(.desk) .seat.me.turn .cards .card:not(.empty) { box-shadow: 0 0 0 2px var(--yellow), 0 4px 12px #000a; }
+.seat.me.discarding .cards .card { cursor: pointer; box-shadow: 0 0 0 2px var(--purple), 0 4px 12px #000a !important; animation: wiggle 1.2s infinite; }
+#tableWrap.compact .seat.me .cards .card { width: 48px; height: 67px; }
+#tableWrap.compact .seat.me .cards .card .r { font-size: 18px; }
+#tableWrap.compact .seat.me .cards .card .s { font-size: 24px; }
+#tableWrap.compact .seat.me .pair.n4 .card { width: 38px; height: 54px; }
+#tableWrap.compact .seat.me .ava { width: 36px; height: 36px; }
+
+/* полоса подсказок: главное крупно, подробности по кнопке */
+body:not(.desk) #hints { max-height: 30dvh; padding: 7px 12px; gap: 4px; }
+.hint-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.hint-top .hand-now { min-width: 0; }
+.eq-big { font-size: 20px; font-weight: 800; line-height: 1; }
+.eq-big.hi { color: var(--green); } .eq-big.mid { color: var(--yellow); } .eq-big.lo { color: #ff7b72; }
+.hint-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 22px; }
+.more-btn { background: none; border: 0; color: var(--gold); font: inherit; font-size: 12px; font-weight: 650; padding: 4px 0 4px 10px; cursor: pointer; white-space: nowrap; }
+.hint-detail { border-top: 1px solid rgba(255,255,255,.08); padding-top: 5px; display: flex; flex-direction: column; gap: 3px; }
+body.desk #hints:not(.detail) { columns: auto; }
+body.desk #hints .eq-big { font-size: 22px; }
+
+/* ставка на телефоне: сумма и «Назад» сверху, быстрые размеры, ползунок, большая кнопка подтверждения */
+body:not(.desk) .raise-box { display: grid; grid-template-columns: 1fr auto; gap: 6px; padding: 8px;
+  grid-template-areas: "amt back" "plh plh" "presets presets" "slider slider" "go go"; }
+body:not(.desk) .raise-box .amt { grid-area: amt; text-align: left; font-size: 19px; align-self: center; }
+body:not(.desk) .raise-box > .hint { grid-area: plh; text-align: left; font-size: 11px; }
+body:not(.desk) .raise-box .r-slider { grid-area: slider; }
+body:not(.desk) .raise-box .r-slider .btn { height: 38px; }
+body:not(.desk) .raise-box .presets { grid-area: presets; }
+body:not(.desk) .raise-box .presets .btn { min-height: 38px; padding: 6px 2px; font-size: 12px; }
+body:not(.desk) .raise-box .r-go { display: contents; }
+body:not(.desk) #rBack { grid-area: back; padding: 7px 14px; font-size: 13px; }
+body:not(.desk) #rGo { grid-area: go; height: 52px; font-size: 18px; }
+@media (max-height: 760px) {
+  body:not(.desk) #hud.raising #myArea, body:not(.desk) #hud.raising #coachBox { display: none; }
+  body:not(.desk) #game.raising .bottombar { display: none; }
+}
+/* до первой раздачи полоса подсказок не нужна */
+body:not(.desk) #game.prestart #myArea { display: none; }
+
+/* фолд, когда можно чекнуть: второе нажатие подтверждает */
+.btn.armed { background: linear-gradient(180deg, #ff6b5f, #b9241c); box-shadow: 0 0 0 3px #fff7; animation: pulse .9s infinite; }
+.ask-title { font-size: 18px !important; color: var(--txt) !important; margin: 4px 30px 16px 0 !important; }
+.ask-row .btn { padding: 14px; font-size: 16px; }
+
+/* лобби: тренировка на всю ширину, остальное ровной сеткой */
+.lobby-panel .row.wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#btnTrain { grid-column: 1 / -1; }
+#tableWrap.compact .seat.me .plate { padding: 1px 10px 1px 24px; min-width: 92px; }

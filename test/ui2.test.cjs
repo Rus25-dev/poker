@@ -31,7 +31,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
         if (pg.isClosed()) continue;
         const b = await pg.$('#aCall');
         if (b) await b.click().catch(() => {});
-        const d = await pg.$('#myCards.discard .pair .card');
+        const d = await pg.$('.seat.me.discarding .cards .card');
         if (d) await d.click().catch(() => {});
       }
       await sleep(250);
@@ -87,7 +87,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   let shotD = false;
   for (let i = 0; i < 200 && !shotD; i++) {
     await sleep(250);
-    if (await pine.$('#myCards.discard')) { await sleep(900); await pine.screenshot({ path: OUT + '/22-pineapple-discard.png' }); await pine.click('#myCards .pair .card'); shotD = true; }
+    if (await pine.$('.seat.me.discarding')) { await sleep(900); await pine.screenshot({ path: OUT + '/22-pineapple-discard.png' }); await pine.click('.seat.me .cards .card'); shotD = true; }
     else { const b = await pine.$('#aCall'); if (b) await b.click().catch(() => {}); }
   }
   console.log('pineapple discard seen:', shotD);

@@ -12,7 +12,7 @@ const ru = {
   start_stack: 'Стартовый стек', blinds: 'Блайнды', level_min: 'Рост блайндов, мин', action_time: 'Время на ход',
   no_limit: 'без лимита', sec: '{n} с', time_bank: 'Запас времени', none: 'нет',
   hints_toggle: 'Подсказки силы руки и проценты', ante_toggle: 'Анте с 4-го уровня', rebuy_levels: 'Ребай (первые уровни)',
-  prizes_toggle: 'Призовые места (Sit&Go)', bots_n: 'Ботов', bots_style: 'Характер ботов', mixed: 'Смешанные',
+  prizes_toggle: 'Призовые места (Sit&Go)', bots_n: 'Ботов', bots_style: 'Характер ботов', mixed: 'Разные',
   play: 'Играть', open_table: 'Открыть стол', offline: 'ОФЛАЙН',
   st_opening: 'Открываю стол…', st_open: 'Стол открыт', st_connecting: 'Подключаюсь к столу…', st_reconnecting: 'Переподключение… ({n})',
   st_seated: 'За столом', st_lost: 'Связь с хостом потеряна', st_migrating: 'Хост пропал — переносим стол…',
@@ -83,7 +83,7 @@ const ru = {
   style_few: 'мало данных', style_tag: 'тайт-агрессивный', style_tp: 'тайт-пассивный', style_lag: 'луз-агрессивный', style_lp: 'луз-пассивный',
   st_line: 'Рейтинг {r} · раздач {h} · VPIP {v}% · PFR {p}% · AF {af} · {style}', st_style_line: '{name}: {style}, выигрыш на вскрытии {sd}%, крупнейший банк {big}',
   st_none: 'Статистики пока нет', seat_bot: 'Бот: {s}', seat_off: 'Отключён', seat_on: 'В сети', seat_chips: 'фишки {a}', seat_buyins: 'закупов: {n}',
-  b_kick_bot: 'Убрать бота', b_kick: 'Убрать со стола', bot_tight: 'Осторожный', bot_normal: 'Сбалансированный', bot_lag: 'Агрессивный',
+  b_kick_bot: 'Убрать бота', b_kick: 'Убрать со стола', bot_tight: 'Осторожный', bot_normal: 'Обычный', bot_lag: 'Агрессивный',
   rules_title: 'Комбинации (от старшей)', prob7: '≈ {p}% на 7 картах', rules_h: 'Коротко о правилах',
   rules_text: 'Холдем: каждому 2 карты, на стол выходят 5 общих (флоп — 3, тёрн — 1, ривер — 1), собирается лучшая пятёрка из 7 карт. Торговля идёт до флопа и на каждой улице: фолд, чек, колл, бет/рейз, олл-ин. Если остаётся один игрок — он забирает банк без вскрытия.',
   rules_omaha: 'Омаха: каждому 4 карты, и комбинацию нужно собрать ровно из 2 своих и 3 общих. Пот-лимит: рейз не больше размера банка.',
@@ -110,6 +110,8 @@ const ru = {
   feat_2: 'Подсказки: шансы против диапазонов соперников, ауты, режим тренера',
   feat_3: 'Честная тасовка — каждый телефон сам проверяет колоду',
   feat_4: 'Без регистрации и своего сервера — вход по коду стола',
+  h_more_detail: 'Подробнее ▾', h_less_detail: 'Свернуть ▴', set_detail: 'Подробные подсказки (ауты, шансы банка, вероятности)',
+  fold_sure: 'Точно фолд?', ask_ok: 'Да', ask_cancel: 'Отмена',
   kb_title: 'Горячие клавиши',
   kb_text: 'F — фолд · C или пробел — чек/колл · R — бет/рейз · 1–5 — быстрые размеры ставки · ↑↓ или колесо мыши — изменить ставку (с Shift — крупнее) · Enter — подтвердить ставку или написать в чат · Esc — назад/закрыть'
 };
@@ -225,6 +227,8 @@ const en = {
   feat_2: 'Hints: equity vs opponent ranges, outs, coach mode',
   feat_3: 'Fair shuffle — every phone verifies the deck itself',
   feat_4: 'No sign-up and no server — join with a table code',
+  h_more_detail: 'More ▾', h_less_detail: 'Less ▴', set_detail: 'Detailed hints (outs, pot odds, probabilities)',
+  fold_sure: 'Fold for sure?', ask_ok: 'Yes', ask_cancel: 'Cancel',
   kb_title: 'Keyboard shortcuts',
   kb_text: 'F — fold · C or Space — check/call · R — bet/raise · 1–5 — quick bet sizes · ↑↓ or mouse wheel — adjust the bet (Shift for bigger steps) · Enter — confirm the bet or type in chat · Esc — back/close'
 };
@@ -313,7 +317,7 @@ const kk = {
   style_few: 'дерек аз', style_tag: 'тайт-агрессив', style_tp: 'тайт-пассив', style_lag: 'луз-агрессив', style_lp: 'луз-пассив',
   st_line: 'Рейтинг {r} · тарату {h} · VPIP {v}% · PFR {p}% · AF {af} · {style}', st_style_line: '{name}: {style}, ашылуда жеңіс {sd}%, ең үлкен банк {big}',
   st_none: 'Әзірге статистика жоқ', seat_bot: 'Бот: {s}', seat_off: 'Ажыратылған', seat_on: 'Желіде', seat_chips: 'фишка {a}', seat_buyins: 'сатып алу: {n}',
-  b_kick_bot: 'Ботты алып тастау', b_kick: 'Үстелден шығару', bot_tight: 'Сақ', bot_normal: 'Теңгерімді', bot_lag: 'Агрессив',
+  b_kick_bot: 'Ботты алып тастау', b_kick: 'Үстелден шығару', bot_tight: 'Сақ', bot_normal: 'Қалыпты', bot_lag: 'Агрессив',
   rules_title: 'Комбинациялар (үлкенінен)', prob7: '7 картада ≈ {p}%', rules_h: 'Ережелер қысқаша',
   rules_text: 'Холдем: әркімге 2 карта, үстелге 5 ортақ карта шығады (флоп — 3, тёрн — 1, ривер — 1), 7 картадан ең жақсы бестік жиналады. Сауда флопқа дейін және әр көшеде жүреді: фолд, чек, колл, бет/рейз, олл-ин. Бір ойыншы қалса, ол банкті ашпай алады.',
   rules_omaha: 'Омаха: әркімге 4 карта, комбинация дәл 2 өз картаңыз бен 3 ортақ картадан жиналады. Пот-лимит: рейз банк көлемінен аспайды.',
@@ -340,6 +344,8 @@ const kk = {
   feat_2: 'Кеңестер: қарсылас диапазонына қарсы мүмкіндік, ауттар, жаттықтырушы режимі',
   feat_3: 'Әділ араластыру — әр телефон колоданы өзі тексереді',
   feat_4: 'Тіркеусіз және серверсіз — үстел коды арқылы кіру',
+  h_more_detail: 'Толығырақ ▾', h_less_detail: 'Жию ▴', set_detail: 'Толық кеңестер (ауттар, банк мүмкіндігі, ықтималдықтар)',
+  fold_sure: 'Шынымен фолд?', ask_ok: 'Иә', ask_cancel: 'Болдырмау',
   kb_title: 'Жылдам пернелер',
   kb_text: 'F — фолд · C немесе бос орын — чек/колл · R — бет/рейз · 1–5 — ставканың жылдам өлшемдері · ↑↓ немесе тінтуір дөңгелегі — ставканы өзгерту (Shift-пен — үлкенірек) · Enter — ставканы растау немесе чатқа жазу · Esc — артқа/жабу'
 };
