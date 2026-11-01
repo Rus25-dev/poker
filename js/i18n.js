@@ -1,6 +1,6 @@
 // Переводы интерфейса: русский, английский, казахский
 const ru = {
-  title: 'Покер с друзьями', subtitle: 'Холдем · Омаха · Ананас — онлайн с телефонов',
+  title: 'Покер с друзьями', subtitle: 'Холдем · Омаха · Ананас — онлайн с друзьями',
   restore_found: 'Есть незавершённый стол', restore: 'Восстановить', forget: 'Забыть',
   your_name: 'Ваше имя', name_ph: 'Например, Рус', create_table: 'Создать стол', or_join: 'или войти к другу',
   code_ph: 'КОД', join: 'Войти', train: '🤖 Тренировка с ботами', rating: '📊 Рейтинг', combos: '🃏 Комбинации',
@@ -78,7 +78,7 @@ const ru = {
   turn_url: 'Адрес (turn:…)', turn_user: 'Логин', turn_pass: 'Пароль', save: 'Сохранить', saved: 'Сохранено',
   st_title: 'Рейтинг', col_player: 'Игрок', col_elo: 'Эло', col_hands: 'Разд.', col_wins: 'Побед', col_vpip: 'VPIP/PFR', col_chips: 'Фишки', col_tours: 'Турн.',
   st_legend: 'Эло — рейтинг по турнирам (старт 1500). VPIP — как часто добровольно входит в банк, PFR — как часто рейзит до флопа, AF — агрессия после флопа. Фишки — итог в кэш-играх.',
-  st_styles: 'Стили игры', st_need20: 'Нужно сыграть от 20 раздач', st_recent: 'Последние турниры', st_reset: 'Сбросить статистику на этом телефоне',
+  st_styles: 'Стили игры', st_need20: 'Нужно сыграть от 20 раздач', st_recent: 'Последние турниры', st_reset: 'Сбросить статистику на этом устройстве',
   st_reset_confirm: 'Сбросить всю статистику?', st_empty: 'Пока пусто — сыграйте пару раздач.',
   style_few: 'мало данных', style_tag: 'тайт-агрессивный', style_tp: 'тайт-пассивный', style_lag: 'луз-агрессивный', style_lp: 'луз-пассивный',
   st_line: 'Рейтинг {r} · раздач {h} · VPIP {v}% · PFR {p}% · AF {af} · {style}', st_style_line: '{name}: {style}, выигрыш на вскрытии {sd}%, крупнейший банк {big}',
@@ -103,11 +103,19 @@ const ru = {
   fair_commit: 'Отпечаток сида следующей раздачи: {h}', fair_bots: 'В тренировке с ботами проверка не нужна.',
   notif_turn: 'Ваш ход!', notif_turn_body: 'Стол {c}: ставка {a}', you: 'Вы', show_cards_of: 'карты {name}',
   r_no_data: 'нет данных', r_bad_commit: 'сид не совпал с хешем', r_commit_changed: 'хеш подменён', r_seed_mismatch: 'ваш сид не учтён',
-  r_board: 'карты стола', r_my_cards: 'ваши карты', r_shown: 'открытые карты'
+  r_board: 'карты стола', r_my_cards: 'ваши карты', r_shown: 'открытые карты',
+  tab_hints: 'Подсказки', tab_chat: 'Чат', tab_log: 'Журнал',
+  tt_history: 'История и разбор раздач', tt_stats: 'Рейтинг и статистика', tt_sound: 'Звук вкл/выкл', tt_settings: 'Настройки', tt_fair: 'Честность раздачи',
+  feat_1: 'Холдем, Омаха и Ананас — кэш-игры и турниры с ростом блайндов',
+  feat_2: 'Подсказки: шансы против диапазонов соперников, ауты, режим тренера',
+  feat_3: 'Честная тасовка — каждый телефон сам проверяет колоду',
+  feat_4: 'Без регистрации и своего сервера — вход по коду стола',
+  kb_title: 'Горячие клавиши',
+  kb_text: 'F — фолд · C или пробел — чек/колл · R — бет/рейз · 1–5 — быстрые размеры ставки · ↑↓ или колесо мыши — изменить ставку (с Shift — крупнее) · Enter — подтвердить ставку или написать в чат · Esc — назад/закрыть'
 };
 
 const en = {
-  title: 'Poker with Friends', subtitle: "Hold'em · Omaha · Pineapple — online from your phones",
+  title: 'Poker with Friends', subtitle: "Hold'em · Omaha · Pineapple — online with friends",
   restore_found: 'Unfinished table found', restore: 'Restore', forget: 'Forget',
   your_name: 'Your name', name_ph: 'e.g. Rus', create_table: 'Create table', or_join: "or join a friend's table",
   code_ph: 'CODE', join: 'Join', train: '🤖 Practice with bots', rating: '📊 Leaderboard', combos: '🃏 Hand rankings',
@@ -185,7 +193,7 @@ const en = {
   turn_url: 'URL (turn:…)', turn_user: 'Username', turn_pass: 'Password', save: 'Save', saved: 'Saved',
   st_title: 'Leaderboard', col_player: 'Player', col_elo: 'Elo', col_hands: 'Hands', col_wins: 'Won', col_vpip: 'VPIP/PFR', col_chips: 'Chips', col_tours: 'Tourn.',
   st_legend: 'Elo — tournament rating (starts at 1500). VPIP — how often a player voluntarily enters the pot, PFR — how often they raise preflop, AF — postflop aggression. Chips — cash game result.',
-  st_styles: 'Playing styles', st_need20: 'Play at least 20 hands', st_recent: 'Recent tournaments', st_reset: 'Reset stats on this phone',
+  st_styles: 'Playing styles', st_need20: 'Play at least 20 hands', st_recent: 'Recent tournaments', st_reset: 'Reset stats on this device',
   st_reset_confirm: 'Reset all stats?', st_empty: 'Nothing yet — play a few hands.',
   style_few: 'not enough data', style_tag: 'tight-aggressive', style_tp: 'tight-passive', style_lag: 'loose-aggressive', style_lp: 'loose-passive',
   st_line: 'Rating {r} · hands {h} · VPIP {v}% · PFR {p}% · AF {af} · {style}', st_style_line: '{name}: {style}, showdown win {sd}%, biggest pot {big}',
@@ -210,11 +218,19 @@ const en = {
   fair_commit: 'Next hand seed fingerprint: {h}', fair_bots: 'No verification needed in practice mode.',
   notif_turn: 'Your turn!', notif_turn_body: 'Table {c}: bet {a}', you: 'You', show_cards_of: "{name}'s cards",
   r_no_data: 'no data', r_bad_commit: 'seed does not match the hash', r_commit_changed: 'hash was swapped', r_seed_mismatch: 'your seed was not used',
-  r_board: 'board cards', r_my_cards: 'your cards', r_shown: 'shown cards'
+  r_board: 'board cards', r_my_cards: 'your cards', r_shown: 'shown cards',
+  tab_hints: 'Hints', tab_chat: 'Chat', tab_log: 'Log',
+  tt_history: 'Hand history & review', tt_stats: 'Leaderboard & stats', tt_sound: 'Sound on/off', tt_settings: 'Settings', tt_fair: 'Fair dealing',
+  feat_1: "Hold'em, Omaha and Pineapple — cash games and tournaments with rising blinds",
+  feat_2: 'Hints: equity vs opponent ranges, outs, coach mode',
+  feat_3: 'Fair shuffle — every phone verifies the deck itself',
+  feat_4: 'No sign-up and no server — join with a table code',
+  kb_title: 'Keyboard shortcuts',
+  kb_text: 'F — fold · C or Space — check/call · R — bet/raise · 1–5 — quick bet sizes · ↑↓ or mouse wheel — adjust the bet (Shift for bigger steps) · Enter — confirm the bet or type in chat · Esc — back/close'
 };
 
 const kk = {
-  title: 'Достармен покер', subtitle: 'Холдем · Омаха · Ананас — телефоннан онлайн',
+  title: 'Достармен покер', subtitle: 'Холдем · Омаха · Ананас — достармен онлайн',
   restore_found: 'Аяқталмаған үстел бар', restore: 'Қалпына келтіру', forget: 'Ұмыту',
   your_name: 'Атыңыз', name_ph: 'Мысалы, Рус', create_table: 'Үстел құру', or_join: 'немесе досыңызға қосылыңыз',
   code_ph: 'КОД', join: 'Кіру', train: '🤖 Боттармен жаттығу', rating: '📊 Рейтинг', combos: '🃏 Комбинациялар',
@@ -292,7 +308,7 @@ const kk = {
   turn_url: 'Мекенжай (turn:…)', turn_user: 'Логин', turn_pass: 'Құпиясөз', save: 'Сақтау', saved: 'Сақталды',
   st_title: 'Рейтинг', col_player: 'Ойыншы', col_elo: 'Эло', col_hands: 'Тар.', col_wins: 'Жеңіс', col_vpip: 'VPIP/PFR', col_chips: 'Фишка', col_tours: 'Турн.',
   st_legend: 'Эло — турнирлер бойынша рейтинг (бастауы 1500). VPIP — банкке өз еркімен кіру жиілігі, PFR — флопқа дейін рейз жиілігі, AF — флоптан кейінгі агрессия. Фишка — кэш-ойындардағы нәтиже.',
-  st_styles: 'Ойын стильдері', st_need20: 'Кемінде 20 тарату ойнау керек', st_recent: 'Соңғы турнирлер', st_reset: 'Осы телефондағы статистиканы тастау',
+  st_styles: 'Ойын стильдері', st_need20: 'Кемінде 20 тарату ойнау керек', st_recent: 'Соңғы турнирлер', st_reset: 'Осы құрылғыдағы статистиканы тастау',
   st_reset_confirm: 'Бүкіл статистиканы тастау керек пе?', st_empty: 'Әзірге бос — бірнеше тарату ойнаңыз.',
   style_few: 'дерек аз', style_tag: 'тайт-агрессив', style_tp: 'тайт-пассив', style_lag: 'луз-агрессив', style_lp: 'луз-пассив',
   st_line: 'Рейтинг {r} · тарату {h} · VPIP {v}% · PFR {p}% · AF {af} · {style}', st_style_line: '{name}: {style}, ашылуда жеңіс {sd}%, ең үлкен банк {big}',
@@ -317,7 +333,15 @@ const kk = {
   fair_commit: 'Келесі тарату сидінің ізі: {h}', fair_bots: 'Боттармен жаттығуда тексеру керек емес.',
   notif_turn: 'Сіздің жүрісіңіз!', notif_turn_body: '{c} үстелі: ставка {a}', you: 'Сіз', show_cards_of: '{name} карталары',
   r_no_data: 'дерек жоқ', r_bad_commit: 'сид хешке сәйкес емес', r_commit_changed: 'хеш ауыстырылған', r_seed_mismatch: 'сіздің сидіңіз ескерілмеген',
-  r_board: 'үстел карталары', r_my_cards: 'сіздің карталарыңыз', r_shown: 'ашылған карталар'
+  r_board: 'үстел карталары', r_my_cards: 'сіздің карталарыңыз', r_shown: 'ашылған карталар',
+  tab_hints: 'Кеңестер', tab_chat: 'Чат', tab_log: 'Журнал',
+  tt_history: 'Таратулар тарихы мен талдауы', tt_stats: 'Рейтинг және статистика', tt_sound: 'Дыбысты қосу/өшіру', tt_settings: 'Баптаулар', tt_fair: 'Тарату әділдігі',
+  feat_1: 'Холдем, Омаха және Ананас — кэш-ойындар мен блайндтары өсетін турнирлер',
+  feat_2: 'Кеңестер: қарсылас диапазонына қарсы мүмкіндік, ауттар, жаттықтырушы режимі',
+  feat_3: 'Әділ араластыру — әр телефон колоданы өзі тексереді',
+  feat_4: 'Тіркеусіз және серверсіз — үстел коды арқылы кіру',
+  kb_title: 'Жылдам пернелер',
+  kb_text: 'F — фолд · C немесе бос орын — чек/колл · R — бет/рейз · 1–5 — ставканың жылдам өлшемдері · ↑↓ немесе тінтуір дөңгелегі — ставканы өзгерту (Shift-пен — үлкенірек) · Enter — ставканы растау немесе чатқа жазу · Esc — артқа/жабу'
 };
 
 const RANKS = {
@@ -366,5 +390,6 @@ export function handText(desc) {
 export function applyStatic(root = document) {
   root.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   root.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  root.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); el.setAttribute('aria-label', el.title); });
   document.title = t('title');
 }

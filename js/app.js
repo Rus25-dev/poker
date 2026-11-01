@@ -42,6 +42,67 @@ function seatPositions(v) {
   return map;
 }
 
+// ---------- компьютерная раскладка ----------
+const DESK_MQ = matchMedia('(min-width: 1000px) and (min-height: 540px) and (min-aspect-ratio: 6/5)');
+const STAGE_ASPECT = 2.05;
+const isDesk = () => document.body.classList.contains('desk');
+// места по овалу стола: я внизу по центру, остальные по часовой стрелке на равных углах
+function deskPositions(v) {
+  const me = v.seats.find(s => s && s.id === v.you);
+  const n = v.seats.length, base = me ? me.seat : 0;
+  const occ = [];
+  for (let k = 0; k < n; k++) { const i = (base + k) % n; if (v.seats[i]) occ.push(i); }
+  const map = {};
+  const cnt = Math.max(2, occ.length);
+  occ.forEach((i, k) => {
+    if (k === 0 && me) { map[i] = [50, 98]; return; }          // я: якорь — низ блока
+    const a = (90 + k * 360 / cnt) * Math.PI / 180;
+    map[i] = [50 + 45 * Math.cos(a), 49 + 37 * Math.sin(a)];
+  });
+  return map;
+}
+const posFor = v => isDesk() ? deskPositions(v) : seatPositions(v);
+
+// блоки, которые на компьютере переезжают в нижнюю панель (запоминаем исходные места)
+const MOVABLE = ['hints', 'drawer', 'coachBox', 'actions'];
+const HOME = {};
+function rememberHomes() { for (const id of MOVABLE) { const el = document.getElementById(id); HOME[id] = { parent: el.parentNode, next: el.nextSibling }; } }
+function applyLayout() {
+  const desk = DESK_MQ.matches;
+  const was = isDesk();
+  document.body.classList.toggle('desk', desk);
+  if (desk && !was) {
+    $('#dockBody').append($('#hints'), $('#drawer'));
+    $('#dockRight').append($('#coachBox'), $('#actions'));
+    setDockTab(st.dockTab || 'hints');
+  } else if (!desk && was) {
+    for (const id of [...MOVABLE].reverse()) { const h = HOME[id]; h.parent.insertBefore(document.getElementById(id), h.next); }
+    $('#hints').classList.remove('dock-hidden');
+    $('#drawer').classList.add('hidden');
+    st.drawer = null;
+  }
+  fitStage();
+  if (st.view) render();
+}
+// сцена стола: максимальный размер нужной пропорции внутри свободного места
+function fitStage() {
+  const stg = $('#stage');
+  if (!isDesk()) { stg.style.width = stg.style.height = ''; return; }
+  const wrap = $('#tableWrap');
+  const W = wrap.clientWidth - 32, H = wrap.clientHeight - 6;
+  const w = Math.max(320, Math.min(W, H * STAGE_ASPECT, 1680));
+  stg.style.width = w + 'px';
+  stg.style.height = (w / STAGE_ASPECT) + 'px';
+  stg.style.setProperty('--tu', (w / 100).toFixed(2) + 'px');
+}
+function setDockTab(tab) {
+  st.dockTab = tab;
+  $$('.dock-tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  $('#hints').classList.toggle('dock-hidden', tab !== 'hints');
+  if (tab === 'hints') { $('#drawer').classList.add('hidden'); st.drawer = null; }
+  else openDrawer(tab);
+}
+
 const DEFAULT_PREFS = { lang: detectLang(), felt: 'green', back: 'red', four: false, sound: true, vibrate: true, hud: true, coach: false, notify: false, avatar: AVATARS[Math.floor(Math.random() * AVATARS.length)] };
 const st = {
   ctl: null, view: null, prevView: null, clockOffset: 0,
@@ -94,6 +155,7 @@ function applyPrefs() {
   applyStatic();
   $$('#langSwitch button').forEach(b => b.classList.toggle('on', b.dataset.lang === getLang()));
   $('#btnAvatarLobby').innerHTML = avatarHTML(st.prefs.avatar, st.name);
+  $('#btnSoundTop').textContent = st.prefs.sound ? '🔊' : '🔇';
   $('#quickEmoji').innerHTML = QUICK.map(e => `<button>${e}</button>`).join('');
   $('#emojiRow').innerHTML = EMOJI.map(e => `<button>${e}</button>`).join('');
   if (st.view) render();
@@ -370,7 +432,7 @@ function afterRender(prev, v) {
     st.rec.start(v);
     st.lastReview = null;
     const targets = [...$$('#seats .seat:not(.me) .cards')].filter(el => el.children.length);
-    const mine = $('#myCards .pair');
+    const mine = isDesk() ? $('#seats .seat.me .cards .pair') : $('#myCards .pair');
     if (me && me.inHand && mine) targets.push(mine);
     const per = Math.max(...v.seats.filter(Boolean).map(s => s.cardCount || 0), 2);
     const dur = animateDeal(targets, $('#board'), per);
@@ -386,7 +448,7 @@ function afterRender(prev, v) {
   }
   // банк к победителю
   if (prev && v.phase === 'over' && prev.phase !== 'over' && v.lastResult) {
-    const els = v.lastResult.winners.map(w => w.id === v.you ? $('#myCards') : document.querySelector(`.seat[data-id="${CSS.escape(w.id)}"] .ava`)).filter(Boolean);
+    const els = v.lastResult.winners.map(w => w.id === v.you ? (isDesk() ? $('#seats .seat.me .ava') : $('#myCards')) : document.querySelector(`.seat[data-id="${CSS.escape(w.id)}"] .ava`)).filter(Boolean);
     setTimeout(() => animatePotToWinners($('#potInfo'), els), 350);
     finishHandForMe(v);
   }
@@ -465,7 +527,8 @@ function statsFor(name) {
 function render() {
   const v = st.view; if (!v) return;
   const me = mySeatObj(v);
-  const posMap = seatPositions(v);
+  const desk = isDesk();
+  const posMap = posFor(v);
   const lr = v.lastResult && v.phase === 'over' ? v.lastResult : null;
   const winners = new Set(lr ? lr.winners.map(w => w.id) : []);
   const bestCards = new Set();
@@ -494,7 +557,8 @@ function render() {
     if (at === 'fold') actCls = 'fold'; else if (at === 'allin') actCls = 'allin'; else if (at === 'raise' || at === 'bet') actCls = 'raise';
     const prevSeat = st.prevView && st.prevView.handNo === v.handNo ? st.prevView.seats[i] : null;
     const reveal = !!(p.hole && !isMe && prevSeat && !prevSeat.hole);
-    const cards = p.hole ? p.hole.map(c => cardHTML(c, 'sm' + (reveal ? ' flip' : ''), bestCards.has(c))).join('')
+    // на компьютере мои карты рисует renderMine прямо в моё место за столом
+    const cards = desk && isMe ? '' : p.hole ? p.hole.map(c => cardHTML(c, 'sm' + (reveal ? ' flip' : ''), bestCards.has(c))).join('')
       : (p.cardCount ? Array.from({ length: p.cardCount }, () => cardHTML(null, 'sm')).join('') : '');
     const sh = lr && lr.shown[p.id];
     const shownHand = sh && sh.desc ? `<div class="hand">${esc(handText(sh.desc))}</div>` : '';
@@ -510,7 +574,7 @@ function render() {
       if (s && s.hands >= 8) hud = `<div class="hudl">${t('hud', { v: s.vpipPct, p: s.pfrPct, af: s.af })}</div>`;
       else if (s) hud = `<div class="hudl">${t('hud_few', { n: s.hands })}</div>`;
     }
-    const isTop = y < 20;
+    const isTop = !desk && y < 20;
     html += `<div class="${cls}${isTop ? ' top' : ''}" data-id="${esc(p.id)}" data-seat="${i}" style="left:${x}%;top:${isTop ? '20px' : y + '%'}">
       ${p.lastAction && v.phase !== 'idle' ? `<div class="act ${actCls}">${esc(actionText(p.lastAction))}</div>` : ''}
       <div class="ava">${avatarHTML(st.avatars[p.id], p.name)}${timer}</div>${eqBadge}
@@ -518,18 +582,28 @@ function render() {
       <div class="cards">${cards}</div>${shownHand}
     </div>`;
     if (p.bet > 0) {
-      const k = y < 40 ? 0.58 : 0.42;
-      const bx = x + (50 - x) * k, by = y + (50 - y) * k;
+      let bx, by;
+      if (desk) {
+        if (isMe) { bx = 50; by = 61; }
+        else { bx = x + (50 - x) * 0.47; by = y + (50 - y) * 0.47 + (y < 50 ? 4 : 0); }
+      } else {
+        const k = y < 40 ? 0.58 : 0.42;
+        bx = x + (50 - x) * k; by = y + (50 - y) * k;
+      }
       html += `<div class="bet" data-seat="${i}" style="left:${bx}%;top:${by}%"><span class="chipico"></span>${fmt(p.bet)}</div>`;
     }
     if (i === v.dealer && v.handNo) {
       const isBottom = (posMap[i] || P.t) === P.me;
-      const dx = x + (50 - x) * 0.28 + (isBottom ? 14 : 0), dy = y + (50 - y) * 0.28;
+      let dx, dy;
+      if (desk) {
+        if (isMe) { dx = 60.5; dy = 82; }
+        else { const side = Math.abs(50 - x) > 15; dx = x + (50 - x) * 0.3 + (side ? 0 : 8); dy = y + (50 - y) * 0.3 + (side ? (y < 50 ? 10 : -9) : 0); }
+      } else { dx = x + (50 - x) * 0.28 + (isBottom ? 14 : 0); dy = y + (50 - y) * 0.28; }
       html += `<div class="dealer-btn" style="left:${dx}%;top:${dy}%">D</div>`;
     }
   }
   // на низком экране прячем рубашки соперников и уменьшаем места, чтобы ничего не наезжало на стол
-  $('#tableWrap').classList.toggle('compact', $('#tableWrap').clientHeight < 330);
+  $('#tableWrap').classList.toggle('compact', !desk && $('#tableWrap').clientHeight < 330);
   $('#seats').innerHTML = html;
   bindSeatTaps();
 
@@ -601,8 +675,10 @@ function renderMine(v, me) {
   const pos = v.dealer === me.seat ? ' · D' : v.sbSeat === me.seat && v.handNo ? ' · ' + t('a_sb', { a: '' }).trim() : v.bbSeat === me.seat && v.handNo ? ' · ' + t('a_bb', { a: '' }).trim() : '';
   const myAct = me.lastAction && v.phase !== 'idle' ? `<span class="my-act">${esc(actionText(me.lastAction))}</span>` : '';
   box.innerHTML = `<div class="pair n${n}">${cards}</div><div class="me-info"><span class="me-ava">${avatarHTML(st.prefs.avatar, me.name)}</span><b>${fmt(me.chips)}</b>${pos}${myAct}</div>`;
+  const heroSlot = isDesk() ? $('#seats .seat.me .cards') : null;
+  if (heroSlot) heroSlot.innerHTML = `<div class="pair n${n}">${cards}</div>`;
   if (me.needDiscard) {
-    $$('#myCards .pair .card').forEach(el => el.onclick = () => { st.ctl.send({ t: 'discard', card: +el.dataset.c }); SND.fold(); });
+    $$('#myCards .pair .card, #seats .seat.me .cards .card').forEach(el => el.onclick = e => { e.stopPropagation(); st.ctl.send({ t: 'discard', card: +el.dataset.c }); SND.fold(); });
   }
   renderHints(v, me);
 }
@@ -701,6 +777,7 @@ function computeAllinEq(v) {
 // ---------- кнопки действий ----------
 function renderActions(v, me) {
   const el = $('#actions');
+  $('#dockRight').classList.toggle('raising', !!(st.raiseOpen && v.legal));
   const host = st.ctl?.isHost();
   if (v.tourOver) {
     el.innerHTML = `<div class="row">${host ? `<button class="btn gold" id="aNewTour">${t('b_newtour')}</button>` : ''}<button class="btn ghost" id="aPlaces">${t('b_results')}</button></div>`;
@@ -751,9 +828,9 @@ function renderActions(v, me) {
     const callTxt = L.canCheck ? t('b_check') : (L.toCall >= me.chips ? t('b_allin_call', { a: fmt(L.toCall) }) : t('b_call', { a: fmt(L.toCall) }));
     const rec = st.coachAct ? (st.coachAct.act === 'raise' || st.coachAct.act === 'allin' ? 'aRaise' : st.coachAct.act === 'fold' ? 'aFold' : 'aCall') : '';
     el.innerHTML = `<div class="row">
-      <button class="btn red ${rec === 'aFold' ? 'rec' : ''}" id="aFold">${t('b_fold')}</button>
-      <button class="btn green ${rec === 'aCall' ? 'rec' : ''}" id="aCall">${callTxt}</button>
-      ${L.canRaise ? `<button class="btn gold ${rec === 'aRaise' ? 'rec' : ''}" id="aRaise">${t(L.currentBet === 0 ? 'b_bet' : 'b_raise')}</button>` : ''}
+      <button class="btn red ${rec === 'aFold' ? 'rec' : ''}" id="aFold">${t('b_fold')}<kbd>F</kbd></button>
+      <button class="btn green ${rec === 'aCall' ? 'rec' : ''}" id="aCall">${callTxt}<kbd>C</kbd></button>
+      ${L.canRaise ? `<button class="btn gold ${rec === 'aRaise' ? 'rec' : ''}" id="aRaise">${t(L.currentBet === 0 ? 'b_bet' : 'b_raise')}<kbd>R</kbd></button>` : ''}
     </div>`;
     $('#aFold').onclick = () => { if (L.canCheck && !confirm(t('confirm_fold'))) return; act('fold'); };
     $('#aCall').onclick = () => act(L.canCheck ? 'check' : 'call');
@@ -812,26 +889,66 @@ function renderRaise(v, L) {
   el.innerHTML = `<div class="raise-box">
     <div class="amt">${label(st.raiseVal)}</div>
     ${L.limit === 'pl' ? `<div class="hint">${t('amt_pl', { a: fmt(L.maxTo) })}</div>` : ''}
-    <div class="row" style="gap:6px">
+    <div class="row r-slider" style="gap:6px">
       <button class="btn ghost sm" id="rMinus" style="flex:none;width:44px">−</button>
       <input type="range" id="rSlider" min="${L.minTo}" max="${L.maxTo}" step="${step}" value="${st.raiseVal}">
       <button class="btn ghost sm" id="rPlus" style="flex:none;width:44px">+</button>
     </div>
-    <div class="presets">${presets.map(([tx, val]) => `<button class="btn ghost" data-v="${val}">${tx}</button>`).join('')}</div>
-    <div class="row"><button class="btn ghost" id="rBack">${t('b_back')}</button><button class="btn gold" id="rGo">${isAllin ? t('b_allin') : t('b_confirm')}</button></div>
+    <div class="presets">${presets.map(([tx, val], i) => `<button class="btn ghost" data-v="${val}">${tx}<kbd>${i + 1}</kbd></button>`).join('')}</div>
+    <div class="row r-go"><button class="btn ghost" id="rBack">${t('b_back')}<kbd>Esc</kbd></button><button class="btn gold" id="rGo">${goLabel(isAllin)}</button></div>
   </div>`;
   const upd = val => { st.raiseVal = clamp(val); renderRaise(st.view, st.view.legal); };
+  const nudge = (dir, big) => upd(st.raiseVal + dir * step * 2 * (big ? 5 : 1));
   $('#rSlider').oninput = e => {
     st.raiseVal = clamp(+e.target.value);
     el.querySelector('.amt').textContent = label(st.raiseVal);
-    $('#rGo').textContent = st.raiseVal >= L.allinTo ? t('b_allin') : t('b_confirm');
+    $('#rGo').innerHTML = goLabel(st.raiseVal >= L.allinTo);
     SND.tick();
   };
-  $('#rMinus').onclick = () => upd(st.raiseVal - step * 2);
-  $('#rPlus').onclick = () => upd(st.raiseVal + step * 2);
+  $('#rMinus').onclick = () => nudge(-1);
+  $('#rPlus').onclick = () => nudge(1);
   $$('.presets .btn').forEach(b => b.onclick = () => upd(+b.dataset.v));
   $('#rBack').onclick = () => { st.raiseOpen = false; renderActions(st.view, mySeatObj()); };
-  $('#rGo').onclick = () => act(st.raiseVal >= L.allinTo ? 'allin' : 'raise', st.raiseVal);
+  const go = () => act(st.raiseVal >= L.allinTo ? 'allin' : 'raise', st.raiseVal);
+  $('#rGo').onclick = go;
+  // колесо мыши над панелью ставки меняет размер (с Shift — крупнее)
+  el.querySelector('.raise-box').addEventListener('wheel', e => { e.preventDefault(); nudge(e.deltaY < 0 ? 1 : -1, e.shiftKey); }, { passive: false });
+  st.raiseCtl = { go, nudge, preset: i => presets[i] && upd(presets[i][1]) };
+}
+const goLabel = allin => `${t(allin ? 'b_allin' : 'b_confirm')}<kbd>Enter</kbd>`;
+
+// ---------- горячие клавиши (по физическим клавишам — работает в любой раскладке) ----------
+function onHotkey(e) {
+  if (!st.ctl || !st.view || $('#game').classList.contains('hidden')) return;
+  const tag = (e.target.tagName || '').toLowerCase();
+  const typing = (tag === 'input' && e.target.type !== 'range' && e.target.type !== 'checkbox') || tag === 'textarea' || tag === 'select';
+  const modalOpen = !$('#modal').classList.contains('hidden');
+  if (e.code === 'Escape') {
+    if (modalOpen) return closeModal();
+    if (typing) return e.target.blur();
+    if (st.raiseOpen) { st.raiseOpen = false; return renderActions(st.view, mySeatObj()); }
+    if (st.drawer && !isDesk()) return closeDrawer();
+    return;
+  }
+  if (typing || modalOpen || e.ctrlKey || e.metaKey || e.altKey) return;
+  // пробел/Enter на кнопке в фокусе не должны срабатывать дважды
+  if (tag === 'button' && (e.code === 'Space' || e.code === 'Enter' || e.code === 'NumpadEnter')) e.preventDefault();
+  const v = st.view, me = mySeatObj(v);
+  const L = me && v.legal && v.toAct === me.seat ? v.legal : null;
+  if (L && st.raiseOpen && st.raiseCtl) {
+    if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); return st.raiseCtl.go(); }
+    if (['ArrowUp', 'ArrowRight', 'Equal', 'NumpadAdd'].includes(e.code)) { e.preventDefault(); return st.raiseCtl.nudge(1, e.shiftKey); }
+    if (['ArrowDown', 'ArrowLeft', 'Minus', 'NumpadSubtract'].includes(e.code)) { e.preventDefault(); return st.raiseCtl.nudge(-1, e.shiftKey); }
+    const m = /^(Digit|Numpad)([1-5])$/.exec(e.code);
+    if (m) return st.raiseCtl.preset(+m[2] - 1);
+  }
+  if (L) {
+    if (e.code === 'KeyF') return $('#aFold')?.click();
+    if (e.code === 'KeyC' || e.code === 'Space') { e.preventDefault(); return $('#aCall')?.click(); }
+    if (e.code === 'KeyR' && !st.raiseOpen) return $('#aRaise')?.click();
+  }
+  // Enter — написать в чат (на компьютере)
+  if ((e.code === 'Enter' || e.code === 'NumpadEnter') && isDesk()) { e.preventDefault(); setDockTab('chat'); $('#chatIn').focus(); }
 }
 
 // ---------- таймеры ----------
@@ -870,7 +987,7 @@ function addChat(m) {
   if (st.chat.length > 200) st.chat.shift();
   if (!m.sys && m.id !== st.view?.you) {
     floatAt(m.id, m.text, true);
-    if (st.drawer !== 'chat') { st.chatUnread++; const b = $('#chatBadge'); b.textContent = st.chatUnread; b.classList.remove('hidden'); }
+    if (st.drawer !== 'chat') { st.chatUnread++; for (const b of [$('#chatBadge'), $('#dockBadge')]) { b.textContent = st.chatUnread; b.classList.remove('hidden'); } }
   }
   if (st.drawer === 'chat') renderChat();
 }
@@ -890,15 +1007,18 @@ function openDrawer(kind) {
   $('#logList').classList.toggle('hidden', kind !== 'log');
   $('#chatForm').classList.toggle('hidden', kind !== 'chat');
   $('#emojiRow').classList.toggle('hidden', kind !== 'chat');
-  if (kind === 'chat') { st.chatUnread = 0; $('#chatBadge').classList.add('hidden'); renderChat(); } else renderLog();
+  if (kind === 'chat') { st.chatUnread = 0; $('#chatBadge').classList.add('hidden'); $('#dockBadge').classList.add('hidden'); renderChat(); } else renderLog();
 }
-function closeDrawer() { st.drawer = null; $('#drawer').classList.add('hidden'); }
+function closeDrawer() {
+  if (isDesk()) return setDockTab('hints');
+  st.drawer = null; $('#drawer').classList.add('hidden');
+}
 
 function floatAt(id, content, isMsg = false) {
   const v = st.view; if (!v) return;
   let x = 50, y = 80;
   const p = v.seats.find(s => s && s.id === id);
-  if (p) { [x, y] = seatPositions(v)[p.seat] || P.t; if (p.id === v.you) y = 82; }
+  if (p) { [x, y] = posFor(v)[p.seat] || P.t; if (p.id === v.you) y = isDesk() ? 72 : 82; }
   const f = document.createElement('div');
   f.className = 'floater' + (isMsg ? ' msg' : '');
   f.style.left = x + '%'; f.style.top = (y - 6) + '%';
@@ -1024,7 +1144,8 @@ function openRules() {
   modal(`<h2>${t('rules_title')}</h2><div class="rank-list">${ex.map(([c, cs, p]) => `<div class="rank-item"><div class="cards-mini">${cs.split(' ').map(s => cardHTML(cardFromStr(s), 'sm')).join('')}</div><div><div class="nm">${t('cat_' + c)}</div><div class="pr">${t('prob7', { p: (p * 100).toFixed(p < 0.001 ? 4 : 1) })}</div></div></div>`).join('')}</div>
   <h3>${t('rules_h')}</h3>
   <p class="hint" style="text-align:left">${t('rules_text')}</p><p class="hint" style="text-align:left">${t('rules_omaha')}</p><p class="hint" style="text-align:left">${t('rules_pine')}</p>
-  <h3>${t('hints_h')}</h3><p class="hint" style="text-align:left">${t('hints_text')}</p>`);
+  <h3>${t('hints_h')}</h3><p class="hint" style="text-align:left">${t('hints_text')}</p>
+  ${isDesk() ? `<h3>${t('kb_title')}</h3><p class="hint" style="text-align:left">${t('kb_text')}</p>` : ''}`);
 }
 
 function openFair() {
@@ -1100,6 +1221,16 @@ function openReview(h) {
 
 // ---------- привязка кнопок ----------
 function initGameUI() {
+  rememberHomes();
+  $$('.dock-tabs button').forEach(b => b.onclick = () => setDockTab(b.dataset.tab));
+  $('#btnHistTop').onclick = openHistory;
+  $('#btnStatsTop').onclick = openStats;
+  $('#btnSettingsTop').onclick = openSettings;
+  $('#btnSoundTop').onclick = () => { st.prefs.sound = !st.prefs.sound; savePrefs(); };
+  document.addEventListener('keydown', onHotkey);
+  DESK_MQ.addEventListener('change', applyLayout);
+  new ResizeObserver(() => fitStage()).observe($('#tableWrap'));
+  applyLayout();
   $('#btnMenu').onclick = openMenu;
   $('#btnFair').onclick = openFair;
   $('#btnCode').onclick = share;

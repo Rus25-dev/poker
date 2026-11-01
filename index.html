@@ -13,6 +13,7 @@
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/desktop.css">
 </head>
 <body data-felt="green" data-back="red">
 <div id="app">
@@ -22,11 +23,25 @@
     <div class="lang-switch" id="langSwitch">
       <button data-lang="ru">RU</button><button data-lang="kk">KZ</button><button data-lang="en">EN</button>
     </div>
-    <div class="logo">
-      <div class="logo-suits"><span>♠</span><span class="r">♥</span><span>♣</span><span class="r">♦</span></div>
-      <h1 data-i18n="title">Покер с друзьями</h1>
-      <p class="sub" data-i18n="subtitle"></p>
+    <div class="lobby-inner">
+    <div class="lobby-hero">
+      <div class="logo">
+        <div class="logo-suits"><span>♠</span><span class="r">♥</span><span>♣</span><span class="r">♦</span></div>
+        <h1 data-i18n="title">Покер с друзьями</h1>
+        <p class="sub" data-i18n="subtitle"></p>
+      </div>
+      <div class="hero-fan desk-only" aria-hidden="true">
+        <div class="card s0"><span class="r">10</span><span class="s">♠</span></div>
+        <div class="card s0"><span class="r">J</span><span class="s">♠</span></div>
+        <div class="card s0"><span class="r">Q</span><span class="s">♠</span></div>
+        <div class="card s0"><span class="r">K</span><span class="s">♠</span></div>
+        <div class="card s0"><span class="r">A</span><span class="s">♠</span></div>
+      </div>
+      <ul class="features desk-only">
+        <li data-i18n="feat_1"></li><li data-i18n="feat_2"></li><li data-i18n="feat_3"></li><li data-i18n="feat_4"></li>
+      </ul>
     </div>
+    <div class="lobby-panel">
 
     <div id="restoreBox" class="card-box hidden">
       <div><span data-i18n="restore_found"></span> <b id="restoreCode"></b></div>
@@ -63,6 +78,8 @@
 
     <p id="installHint" class="hint hidden" data-i18n="install_hint"></p>
     <button class="btn ghost hidden" id="btnInstall" data-i18n="install"></button>
+    </div>
+    </div>
   </section>
 
   <!-- ===== Игра ===== -->
@@ -70,21 +87,42 @@
     <header class="topbar">
       <button class="chip-btn" id="btnCode"><span class="dot" id="netDot"></span><span id="roomCode">—</span></button>
       <div class="blinds" id="blindsInfo">—</div>
-      <button class="icon-btn" id="btnFair" title="fair">🔒</button>
+      <div class="top-tools desk-only">
+        <button class="icon-btn" id="btnHistTop" data-i18n-title="tt_history">📜</button>
+        <button class="icon-btn" id="btnStatsTop" data-i18n-title="tt_stats">📊</button>
+        <button class="icon-btn" id="btnSoundTop" data-i18n-title="tt_sound">🔊</button>
+        <button class="icon-btn" id="btnSettingsTop" data-i18n-title="tt_settings">⚙️</button>
+      </div>
+      <button class="icon-btn" id="btnFair" data-i18n-title="tt_fair">🔒</button>
       <button class="icon-btn" id="btnMenu" aria-label="menu">☰</button>
     </header>
 
     <div class="game-main">
       <div id="tableWrap">
-        <div id="felt">
-          <div class="felt-inner">
-            <div id="centerMsg"></div>
-            <div id="board"></div>
-            <div id="potInfo"></div>
+        <div id="stage">
+          <div id="felt">
+            <div class="felt-inner">
+              <div id="centerMsg"></div>
+              <div id="board"></div>
+              <div id="potInfo"></div>
+            </div>
           </div>
+          <div id="seats"></div>
+          <div id="floaters"></div>
         </div>
-        <div id="seats"></div>
-        <div id="floaters"></div>
+      </div>
+
+      <!-- нижняя панель компьютерной версии: слева вкладки, справа действия -->
+      <div id="dock" class="desk-only">
+        <div class="dock-left">
+          <div class="dock-tabs" role="tablist">
+            <button data-tab="hints" class="on" data-i18n="tab_hints"></button>
+            <button data-tab="chat"><span data-i18n="tab_chat"></span><span class="badge hidden" id="dockBadge">0</span></button>
+            <button data-tab="log" data-i18n="tab_log"></button>
+          </div>
+          <div class="dock-body" id="dockBody"></div>
+        </div>
+        <div class="dock-right" id="dockRight"></div>
       </div>
 
       <div id="hud">
